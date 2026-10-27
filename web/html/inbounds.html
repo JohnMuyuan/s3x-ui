@@ -877,7 +877,7 @@
                     to_inbound = dbInbound.toInbound()
                     this.inbounds.push(to_inbound);
                     this.dbInbounds.push(dbInbound);
-                    if ([Protocols.VMESS, Protocols.VLESS, Protocols.TROJAN, Protocols.SHADOWSOCKS].includes(inbound.protocol) || isSingboxProtocol(inbound.protocol)) {
+                    if ([Protocols.VMESS, Protocols.VLESS, Protocols.TROJAN, Protocols.SHADOWSOCKS].includes(inbound.protocol) || keysClientsByEmail(inbound.protocol)) {
                         if (dbInbound.isSS && (!to_inbound.isSSMultiUser)) {
                             continue;
                         }
@@ -1127,7 +1127,7 @@
                     protocol: inbound.protocol,
                     settings: inbound.settings.toString(),
                 };
-                if (inbound.canEnableStream() || inbound.isSingbox) data.streamSettings = inbound.stream.toString();
+                if (inbound.canEnableStream() || inbound.canEnableTls()) data.streamSettings = inbound.stream.toString();
                 data.sniffing = inbound.sniffing.toString();
                 data.allocate = inbound.allocate.toString();
 
@@ -1147,7 +1147,7 @@
                     protocol: inbound.protocol,
                     settings: inbound.settings.toString(),
                 };
-                if (inbound.canEnableStream() || inbound.isSingbox) data.streamSettings = inbound.stream.toString();
+                if (inbound.canEnableStream() || inbound.canEnableTls()) data.streamSettings = inbound.stream.toString();
                 data.sniffing = inbound.sniffing.toString();
                 data.allocate = inbound.allocate.toString();
 
@@ -1194,7 +1194,7 @@
                 });
             },
             findIndexOfClient(protocol, clients, client) {
-                if (isSingboxProtocol(protocol)) return clients.findIndex(item => item.email === client.email);
+                if (keysClientsByEmail(protocol)) return clients.findIndex(item => item.email === client.email);
                 switch (protocol) {
                     case Protocols.TROJAN:
                     case Protocols.SHADOWSOCKS:
@@ -1292,7 +1292,7 @@
                 switch (protocol) {
                     case Protocols.TROJAN: return client.password;
                     case Protocols.SHADOWSOCKS: return client.email;
-                    default: return isSingboxProtocol(protocol) ? client.email : client.id;
+                    default: return keysClientsByEmail(protocol) ? client.email : client.id;
                 }
             },
             checkFallback(dbInbound) {

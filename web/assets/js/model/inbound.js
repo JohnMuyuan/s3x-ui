@@ -7,6 +7,8 @@ const Protocols = {
     SOCKS: 'socks',
     HTTP: 'http',
     WIREGUARD: 'wireguard',
+    MASQUE: 'masque',
+    TUN: 'tun',
     ANYTLS: 'anytls',
     HYSTERIA2: 'hysteria2',
     TUIC: 'tuic',
@@ -24,6 +26,11 @@ const SINGBOX_QUIC_PROTOCOLS = [Protocols.HYSTERIA2, Protocols.TUIC, Protocols.H
 
 function isSingboxProtocol(protocol) {
     return SINGBOX_PROTOCOLS.includes(protocol);
+}
+
+// Clients made of an email and a password, told apart by email.
+function keysClientsByEmail(protocol) {
+    return isSingboxProtocol(protocol) || protocol === Protocols.MASQUE;
 }
 
 const SSMethods = {
@@ -917,6 +924,23 @@ class SockoptStreamSettings extends XrayCommonClass {
     }
 }
 
+// MASQUE (CONNECT-IP over HTTP/3). A server reads only the path; empty means
+// Xray's default, /.well-known/masque/ip/*/*/.
+class MasqueStreamSettings extends XrayCommonClass {
+    constructor(path = '') {
+        super();
+        this.path = path;
+    }
+
+    static fromJson(json = {}) {
+        return new MasqueStreamSettings(json.path);
+    }
+
+    toJson() {
+        return this.path ? { path: this.path } : {};
+    }
+}
+
 class StreamSettings extends XrayCommonClass {
     constructor(network = 'tcp',
         security = 'none',
@@ -930,6 +954,7 @@ class StreamSettings extends XrayCommonClass {
         httpupgradeSettings = new HTTPUpgradeStreamSettings(),
         xhttpSettings = new xHTTPStreamSettings(),
         sockopt = undefined,
+        masqueSettings = new MasqueStreamSettings(),
     ) {
         super();
         this.network = network;
@@ -944,6 +969,7 @@ class StreamSettings extends XrayCommonClass {
         this.httpupgrade = httpupgradeSettings;
         this.xhttp = xhttpSettings;
         this.sockopt = sockopt;
+        this.masque = masqueSettings;
     }
 
     get isTls() {
@@ -993,6 +1019,7 @@ class StreamSettings extends XrayCommonClass {
             HTTPUpgradeStreamSettings.fromJson(json.httpupgradeSettings),
             xHTTPStreamSettings.fromJson(json.xhttpSettings),
             SockoptStreamSettings.fromJson(json.sockopt),
+            MasqueStreamSettings.fromJson(json.masqueSettings),
         );
     }
 
@@ -1010,6 +1037,7 @@ class StreamSettings extends XrayCommonClass {
             grpcSettings: network === 'grpc' ? this.grpc.toJson() : undefined,
             httpupgradeSettings: network === 'httpupgrade' ? this.httpupgrade.toJson() : undefined,
             xhttpSettings: network === 'xhttp' ? this.xhttp.toJson() : undefined,
+            masqueSettings: network === 'masque' ? this.masque.toJson() : undefined,
             sockopt: this.sockopt != undefined ? this.sockopt.toJson() : undefined,
         };
     }
@@ -1098,7 +1126,7 @@ class Inbound extends XrayCommonClass {
             case Protocols.VLESS: return this.settings.vlesses;
             case Protocols.TROJAN: return this.settings.trojans;
             case Protocols.SHADOWSOCKS: return this.isSSMultiUser ? this.settings.shadowsockses : null;
-            default: return isSingboxProtocol(this.protocol) ? this.settings.clients : null;
+            default: return keysClientsByEmail(this.protocol) ? this.settings.clients : null;
         }
     }
 
@@ -1115,6 +1143,13 @@ class Inbound extends XrayCommonClass {
         this.settings = Inbound.Settings.getSettings(protocol);
         if (protocol === Protocols.TROJAN) {
             this.tls = false;
+        }
+        if (protocol === Protocols.MASQUE) {
+            this.stream.network = 'masque';
+            this.stream.security = 'tls';
+            this.stream.tls.alpn = [ALPN_OPTION.H3];
+        } else if (this.stream.network === 'masque') {
+            this.stream.network = 'tcp';
         }
         if (SINGBOX_TLS_PROTOCOLS.includes(protocol)) {
             this.stream.network = 'tcp';
@@ -1234,7 +1269,7 @@ class Inbound extends XrayCommonClass {
     }
 
     canEnableTls() {
-        if (SINGBOX_TLS_PROTOCOLS.includes(this.protocol)) return true;
+        if (SINGBOX_TLS_PROTOCOLS.includes(this.protocol) || this.protocol === Protocols.MASQUE) return true;
         if (![Protocols.VMESS, Protocols.VLESS, Protocols.TROJAN, Protocols.SHADOWSOCKS].includes(this.protocol)) return false;
         return ["tcp", "ws", "http", "grpc", "httpupgrade", "xhttp"].includes(this.network);
     }
@@ -1831,6 +1866,8 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.SOCKS: return new Inbound.SocksSettings(protocol);
             case Protocols.HTTP: return new Inbound.HttpSettings(protocol);
             case Protocols.WIREGUARD: return new Inbound.WireguardSettings(protocol);
+            case Protocols.MASQUE: return new Inbound.MasqueSettings(protocol);
+            case Protocols.TUN: return new Inbound.TunSettings(protocol);
             default: return isSingboxProtocol(protocol) ? new Inbound.SingboxSettings(protocol) : null;
         }
     }
@@ -1845,6 +1882,8 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.SOCKS: return Inbound.SocksSettings.fromJson(json);
             case Protocols.HTTP: return Inbound.HttpSettings.fromJson(json);
             case Protocols.WIREGUARD: return Inbound.WireguardSettings.fromJson(json);
+            case Protocols.MASQUE: return Inbound.MasqueSettings.fromJson(protocol, json);
+            case Protocols.TUN: return Inbound.TunSettings.fromJson(protocol, json);
             default: return isSingboxProtocol(protocol) ? Inbound.SingboxSettings.fromJson(protocol, json) : null;
         }
     }
@@ -2632,6 +2671,70 @@ Inbound.WireguardSettings.Peer = class extends XrayCommonClass {
 
 // One settings shape for every sing-box protocol: 2.6.2-style clients keyed by
 // email, plus the protocol's own options stored under sing-box's field names.
+// MASQUE serves CONNECT-IP: each client logs in with its email and password
+// (HTTP Basic auth) and leases tunnel addresses from the pools below.
+Inbound.MasqueSettings = class extends Inbound.Settings {
+    constructor(protocol, clients = [new Inbound.SingboxSettings.Client(protocol)],
+        address = ['10.14.0.1/24', 'fd14::1/64'], mtu = 0) {
+        super(protocol);
+        this.clients = clients;
+        this.address = address;
+        this.mtu = mtu;
+    }
+
+    static fromJson(protocol, json = {}) {
+        return new Inbound.MasqueSettings(
+            protocol,
+            (json.clients || []).map(c => Inbound.SingboxSettings.Client.fromJson(protocol, c)),
+            json.address || [],
+            json.mtu || 0,
+        );
+    }
+
+    toJson() {
+        const json = {
+            clients: Inbound.MasqueSettings.toJsonArray(this.clients),
+            address: this.address,
+        };
+        if (this.mtu > 0) json.mtu = this.mtu;
+        return json;
+    }
+};
+
+// Xray's TUN inbound runs on a network interface rather than a port. Routing
+// the server's own traffic into it (autoSystemRoutingTable) can cut off SSH,
+// so it stays empty unless set on purpose.
+Inbound.TunSettings = class extends Inbound.Settings {
+    constructor(protocol, name = 'xray0', mtu = 1500, gateway = [], dns = [], userLevel = 0,
+        autoSystemRoutingTable = [], autoOutboundsInterface = 'auto') {
+        super(protocol);
+        this.name = name;
+        this.mtu = mtu;
+        this.gateway = gateway;
+        this.dns = dns;
+        this.userLevel = userLevel;
+        this.autoSystemRoutingTable = autoSystemRoutingTable;
+        this.autoOutboundsInterface = autoOutboundsInterface;
+    }
+
+    static fromJson(protocol, json = {}) {
+        return new Inbound.TunSettings(protocol, json.name, json.mtu, json.gateway, json.dns, json.userLevel,
+            json.autoSystemRoutingTable, json.autoOutboundsInterface);
+    }
+
+    toJson() {
+        return {
+            name: this.name,
+            mtu: this.mtu,
+            gateway: this.gateway,
+            dns: this.dns,
+            userLevel: this.userLevel,
+            autoSystemRoutingTable: this.autoSystemRoutingTable,
+            autoOutboundsInterface: this.autoOutboundsInterface,
+        };
+    }
+};
+
 Inbound.SingboxSettings = class extends Inbound.Settings {
     constructor(protocol, clients, options = {}) {
         super(protocol);

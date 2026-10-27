@@ -1,0 +1,27 @@
+{{define "form/tun"}}
+<a-alert type="warning" show-icon :style="{ marginBottom: '10px' }" message='{{ i18n "pages.inbounds.tunWarning" }}'></a-alert>
+<a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
+  <a-form-item label="Name">
+    <a-input v-model.trim="inbound.settings.name"></a-input>
+  </a-form-item>
+  <a-form-item label="MTU">
+    <a-input-number v-model.number="inbound.settings.mtu" :min="0" :max="65535"></a-input-number>
+  </a-form-item>
+  <a-form-item label="Gateway">
+    <a-select mode="tags" v-model="inbound.settings.gateway" :dropdown-class-name="themeSwitcher.currentTheme"></a-select>
+  </a-form-item>
+  <a-form-item label="DNS">
+    <a-select mode="tags" v-model="inbound.settings.dns" :dropdown-class-name="themeSwitcher.currentTheme"></a-select>
+  </a-form-item>
+  <a-form-item label="User Level">
+    <a-input-number v-model.number="inbound.settings.userLevel" :min="0"></a-input-number>
+  </a-form-item>
+  <a-form-item label="Auto Routes">
+    <a-select mode="tags" v-model="inbound.settings.autoSystemRoutingTable" placeholder="0.0.0.0/0"
+      :dropdown-class-name="themeSwitcher.currentTheme"></a-select>
+  </a-form-item>
+  <a-form-item label="Outbound Interface">
+    <a-input v-model.trim="inbound.settings.autoOutboundsInterface" placeholder="auto"></a-input>
+  </a-form-item>
+</a-form>
+{{end}}

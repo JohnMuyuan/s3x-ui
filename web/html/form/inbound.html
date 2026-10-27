@@ -109,6 +109,16 @@
     {{template "form/wireguard"}}
 </template>
 
+<!-- masque -->
+<template v-if="inbound.protocol === Protocols.MASQUE">
+    {{template "form/masque"}}
+</template>
+
+<!-- tun -->
+<template v-if="inbound.protocol === Protocols.TUN">
+    {{template "form/tun"}}
+</template>
+
 <!-- sing-box protocols, served by sbcore -->
 <template v-if="inbound.isSingbox">
     {{template "form/singbox"}}

@@ -19,6 +19,8 @@ const (
 	Shadowsocks Protocol = "shadowsocks"
 	Socks       Protocol = "socks"
 	WireGuard   Protocol = "wireguard"
+	MASQUE      Protocol = "masque"
+	Tun         Protocol = "tun"
 
 	// Served by the sbcore sing-box sidecar, not by Xray.
 	AnyTLS    Protocol = "anytls"
@@ -45,7 +47,7 @@ func (p Protocol) IsSingbox() bool {
 // KeysClientsByEmail reports protocols whose clients are addressed by email
 // rather than by id or password in client edit and delete calls.
 func (p Protocol) KeysClientsByEmail() bool {
-	return p == Shadowsocks || p.IsSingbox()
+	return p == Shadowsocks || p == MASQUE || p.IsSingbox()
 }
 
 func IsSingboxTag(tag string) bool {

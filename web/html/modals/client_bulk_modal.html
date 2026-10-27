@@ -214,7 +214,7 @@
                 case Protocols.VLESS: return new Inbound.VLESSSettings.VLESS();
                 case Protocols.TROJAN: return new Inbound.TrojanSettings.Trojan();
                 case Protocols.SHADOWSOCKS: return new Inbound.ShadowsocksSettings.Shadowsocks(clientsBulkModal.inbound.settings.shadowsockses[0].method);
-                default: return isSingboxProtocol(protocol) ? new Inbound.SingboxSettings.Client(protocol) : null;
+                default: return keysClientsByEmail(protocol) ? new Inbound.SingboxSettings.Client(protocol) : null;
             }
         },
         close() {

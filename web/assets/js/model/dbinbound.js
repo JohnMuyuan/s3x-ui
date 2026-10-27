@@ -125,7 +125,7 @@ class DBInbound {
             case Protocols.SHADOWSOCKS:
                 return this.toInbound().isSSMultiUser;
             default:
-                return isSingboxProtocol(this.protocol);
+                return keysClientsByEmail(this.protocol);
         }
     }
 

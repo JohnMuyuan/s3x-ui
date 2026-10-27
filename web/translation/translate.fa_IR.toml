@@ -222,6 +222,8 @@
 "vlessEncryption" = "VLESS Encryption"
 "vlessEncryptionDesc" = "VLESS's own encryption layer, which resists probing even without TLS; ML-KEM-768 is post-quantum. Clients need Xray 25.8 or newer."
 "postQuantum" = "post-quantum"
+"masqueAddressDesc" = "Client tunnel addresses are leased from these prefixes: at most one IPv4 and one IPv6."
+"tunWarning" = "TUN creates a network interface on the server. Auto Routes send the server's own traffic into it and can cut off SSH; leave them empty unless you know you need them."
 "naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "لطفا شناسه گفتگوی تلگرام را وارد کنید. (از دستور '/id' در ربات استفاده کنید) یا (@userinfobot)"
 "subscriptionDesc" = "شما می‌توانید لینک سابسکربپشن خودرا در 'جزئیات' پیدا کنید، همچنین می‌توانید از همین نام برای چندین کاربر استفاده‌کنید"

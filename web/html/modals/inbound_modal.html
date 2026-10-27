@@ -133,7 +133,7 @@
             protocolChange(protocol) {
                 this.$nextTick(() => {
                     const tls = inModal.inbound.stream.tls;
-                    if (!this.isEdit && SINGBOX_TLS_PROTOCOLS.includes(protocol) && tls.certs.length > 0
+                    if (!this.isEdit && (SINGBOX_TLS_PROTOCOLS.includes(protocol) || protocol === Protocols.MASQUE) && tls.certs.length > 0
                         && !tls.certs[0].certFile && !tls.certs[0].cert) {
                         this.setSelfSignedCert(0);
                     }

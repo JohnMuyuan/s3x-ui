@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 
+	"x-ui/database/model"
 	"x-ui/logger"
 	"x-ui/singbox"
 	"x-ui/util/json_util"
@@ -126,6 +127,11 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 					if c["flow"] == "xtls-rprx-vision-udp443" {
 						c["flow"] = "xtls-rprx-vision"
 					}
+				}
+				if inbound.Protocol == model.MASQUE {
+					// MASQUE users log in with HTTP Basic auth, which Xray calls pass.
+					c["pass"] = c["password"]
+					delete(c, "password")
 				}
 				final_clients = append(final_clients, any(c))
 			}
