@@ -22,13 +22,19 @@ func (c *Core) AddInbound(config []byte) error {
 		return err
 	}
 
-	return box.inbound.Create(
-		box.scope.Context(),
-		box.router,
-		box.logFactory.NewLogger("inbound/"+inbound_config.Type+"["+inbound_config.Tag+"]"),
-		inbound_config.Tag,
-		inbound_config.Type,
-		inbound_config.Options)
+	err = recovered(func() error {
+		return box.inbound.Create(
+			box.scope.Context(),
+			box.router,
+			box.logFactory.NewLogger("inbound/"+inbound_config.Type+"["+inbound_config.Tag+"]"),
+			inbound_config.Tag,
+			inbound_config.Type,
+			inbound_config.Options)
+	})
+	if err != nil {
+		_ = box.inbound.Remove(inbound_config.Tag)
+	}
+	return err
 }
 
 func (c *Core) RemoveInbound(tag string) error {

@@ -80,7 +80,7 @@ func (c *Core) Start(sbConfig []byte) error {
 		return err
 	}
 
-	if err = instance.Start(); err != nil {
+	if err = recovered(instance.Start); err != nil {
 		_ = instance.Close()
 		return err
 	}
@@ -90,6 +90,17 @@ func (c *Core) Start(sbConfig []byte) error {
 	c.isRunning = true
 	c.mu.Unlock()
 	return nil
+}
+
+// recovered turns a panic in a protocol's start into an error, so a bad
+// inbound fails its request instead of leaving listeners bound behind it.
+func recovered(fn func() error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return fn()
 }
 
 // Stop detaches the instance under the lock and closes it outside, since

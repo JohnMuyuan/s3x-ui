@@ -161,7 +161,7 @@ func (t *SessionTracker) leave(session *Session) {
 }
 
 func (t *SessionTracker) RoutedConnection(ctx context.Context, conn net.Conn, metadata adapter.InboundContext, matchedRule adapter.Rule, matchOutbound adapter.Outbound) net.Conn {
-	session, readCounter, writeCounter := t.newSession(metadata, matchedRule, matchOutbound, N.NetworkTCP)
+	session, readCounter, writeCounter := t.newSession(withDetourOrigin(ctx, metadata), matchedRule, matchOutbound, N.NetworkTCP)
 	tracked := &sessionConn{
 		ExtendedConn: bufio.NewInt64CounterConn(conn, readCounter, writeCounter),
 		tracker:      t,
@@ -172,7 +172,7 @@ func (t *SessionTracker) RoutedConnection(ctx context.Context, conn net.Conn, me
 }
 
 func (t *SessionTracker) RoutedPacketConnection(ctx context.Context, conn N.PacketConn, metadata adapter.InboundContext, matchedRule adapter.Rule, matchOutbound adapter.Outbound) N.PacketConn {
-	session, readCounter, writeCounter := t.newSession(metadata, matchedRule, matchOutbound, N.NetworkUDP)
+	session, readCounter, writeCounter := t.newSession(withDetourOrigin(ctx, metadata), matchedRule, matchOutbound, N.NetworkUDP)
 	tracked := &sessionPacketConn{
 		PacketConn: bufio.NewInt64CounterPacketConn(conn, readCounter, nil, writeCounter, nil),
 		tracker:    t,

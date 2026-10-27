@@ -66,6 +66,17 @@ func (s *componentScopes) start(name string, component adapter.Lifecycle, stage 
 		s.order = append(s.order, component)
 	}
 	s.access.Unlock()
+	return startRecovered(scope, name, component, stage)
+}
+
+// startRecovered reports a panicking Start as an error, so the caller's close
+// path still releases whatever the component bound before it panicked.
+func startRecovered(scope *adapter.Scope, name string, component adapter.Lifecycle, stage adapter.StartStage) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = E.New("start ", name, ": panic: ", r)
+		}
+	}()
 	return scope.Start(name, component, stage)
 }
 

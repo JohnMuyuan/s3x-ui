@@ -19,6 +19,8 @@ import (
 	"github.com/sagernet/sing-box/protocol/block"
 	"github.com/sagernet/sing-box/protocol/direct"
 	"github.com/sagernet/sing-box/protocol/naive"
+	// Naive's HTTP/3 listener; without it naive panics on start.
+	_ "github.com/sagernet/sing-box/protocol/naive/quic"
 	"github.com/sagernet/sing-box/protocol/shadowtls"
 	"github.com/sagernet/sing-box/protocol/socks"
 )
@@ -31,6 +33,8 @@ func InboundRegistry() *inbound.Registry {
 	suiSnell.RegisterInbound(registry)
 	naive.RegisterInbound(registry)
 	shadowtls.RegisterInbound(registry)
+	// Only as ShadowTLS's loopback inner inbound; Xray serves Shadowsocks itself.
+	registerInnerShadowsocks(registry)
 
 	suiHysteria.RegisterInbound(registry)
 	suiTuic.RegisterInbound(registry)
