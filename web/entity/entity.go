@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/netip"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 	"math"
@@ -36,9 +37,9 @@ type AllSetting struct {
 	TgBotAPIServer              string `json:"tgBotAPIServer" form:"tgBotAPIServer"`
 	TgBotChatId                 string `json:"tgBotChatId" form:"tgBotChatId"`
 	TgRunTime                   string `json:"tgRunTime" form:"tgRunTime"`
-	TgBotBackup                 bool   `json:"tgBotBackup" form:"tgBotBackup"`
-	TgBotLoginNotify            bool   `json:"tgBotLoginNotify" form:"tgBotLoginNotify"`
+	TgNotifyEvents              string `json:"tgNotifyEvents" form:"tgNotifyEvents"`
 	TgCpu                       int    `json:"tgCpu" form:"tgCpu"`
+	TgMemory                    int    `json:"tgMemory" form:"tgMemory"`
 	TgLang                      string `json:"tgLang" form:"tgLang"`
 	TimeLocation                string `json:"timeLocation" form:"timeLocation"`
 	TwoFactorEnable				bool   `json:"twoFactorEnable" form:"twoFactorEnable"`
@@ -70,6 +71,9 @@ type AllSetting struct {
 	SubJsonRules                string `json:"subJsonRules" form:"subJsonRules"`
 	Datepicker                  string `json:"datepicker" form:"datepicker"`
 }
+
+// tgEvents are the Telegram notification events (service.TgEvent*).
+var tgEvents = []string{"report", "backup", "login", "cpu", "memory", "outbound", "xray"}
 
 func (s *AllSetting) CheckValid() error {
 	if s.WebListen != "" {
@@ -139,6 +143,14 @@ func (s *AllSetting) CheckValid() error {
 
 	if s.OutboundMonitorInterval < 1 {
 		return common.NewError("outbound monitor interval must be at least 1 minute")
+	}
+	for _, e := range strings.Split(s.TgNotifyEvents, ",") {
+		if e = strings.TrimSpace(e); e != "" && !slices.Contains(tgEvents, e) {
+			return common.NewError("unknown Telegram notification event:", e)
+		}
+	}
+	if s.TgCpu < 0 || s.TgCpu > 100 || s.TgMemory < 0 || s.TgMemory > 100 {
+		return common.NewError("a load threshold is a percentage")
 	}
 	if u, err := url.Parse(s.OutboundTestUrl); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
 		return common.NewError("outbound test URL is not an http(s) URL:", s.OutboundTestUrl)

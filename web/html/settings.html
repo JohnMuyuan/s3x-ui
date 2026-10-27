@@ -433,6 +433,15 @@
       },
     },
     computed: {
+      // the Telegram events, kept as a comma separated list
+      tgEvents: {
+        get() {
+          return (this.allSetting.tgNotifyEvents || '').split(',').filter(e => e);
+        },
+        set(events) {
+          this.allSetting.tgNotifyEvents = events.join(',');
+        },
+      },
       fragment: {
         get: function () { return this.allSetting?.subJsonFragment != ""; },
         set: function (v) {

@@ -31,6 +31,15 @@ func (s *XrayService) IsXrayRunning() bool {
 	return p != nil && p.IsRunning()
 }
 
+// XrayExited tells whether Xray ended by itself (it was started and not
+// stopped by the panel), and how.
+func (s *XrayService) XrayExited() (bool, string) {
+	if p == nil || p.IsRunning() || p.Stopped() {
+		return false, ""
+	}
+	return true, p.ExitState()
+}
+
 func (s *XrayService) GetXrayErr() error {
 	if p == nil {
 		return nil

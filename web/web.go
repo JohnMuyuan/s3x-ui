@@ -265,6 +265,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 }
 
 func (s *Server) startTask() {
+	s.settingService.MigrateTgNotifyEvents()
 	service.StartSingboxApplier(s.ctx)
 	err := s.xrayService.RestartXray(true)
 	if err != nil {
@@ -320,11 +321,8 @@ func (s *Server) startTask() {
 		// check for Telegram bot callback query hash storage reset
 		s.cron.AddJob("@every 2m", job.NewCheckHashStorageJob())
 
-		// Check CPU load and alarm to TgBot if threshold passes
-		cpuThreshold, err := s.settingService.GetTgCpu()
-		if (err == nil) && (cpuThreshold > 0) {
-			s.cron.AddJob("@every 10s", job.NewCheckCpuJob())
-		}
+		// CPU and memory alerts, when over their thresholds
+		s.cron.AddJob("@every 1m", job.NewCheckSystemLoadJob())
 	} else {
 		s.cron.Remove(entry)
 	}

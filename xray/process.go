@@ -108,6 +108,7 @@ type process struct {
 	exitErr   error
 	startTime time.Time
 	exited    chan struct{}
+	stopped   bool
 }
 
 func newProcess(config *Config) *process {
@@ -127,6 +128,24 @@ func (p *process) IsRunning() bool {
 		return true
 	}
 	return false
+}
+
+// Stopped tells whether the process was stopped, rather than exited by itself.
+func (p *process) Stopped() bool {
+	return p.stopped
+}
+
+// ExitState tells how the process ended ("exit status 23", "signal: killed"),
+// with its last log line when it failed.
+func (p *process) ExitState() string {
+	if p.cmd == nil || p.cmd.ProcessState == nil {
+		return ""
+	}
+	state := p.cmd.ProcessState.String()
+	if !p.cmd.ProcessState.Success() && p.logWriter.lastLine != "" {
+		state += ": " + p.logWriter.lastLine
+	}
+	return state
 }
 
 func (p *process) GetErr() error {
@@ -243,6 +262,7 @@ func (p *process) Stop() error {
 	if !p.IsRunning() {
 		return errors.New("xray is not running")
 	}
+	p.stopped = true
 	if err := p.cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		return err
 	}

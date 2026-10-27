@@ -19,9 +19,9 @@ class AllSetting {
         this.tgBotAPIServer = "";
         this.tgBotChatId = "";
         this.tgRunTime = "@daily";
-        this.tgBotBackup = false;
-        this.tgBotLoginNotify = true;
+        this.tgNotifyEvents = "report,login,cpu,outbound";
         this.tgCpu = 80;
+        this.tgMemory = 80;
         this.tgLang = "en-US";
         this.twoFactorEnable = false;
         this.twoFactorToken = "";

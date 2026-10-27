@@ -52,7 +52,5 @@ func (j *OutboundMonitorJob) Run() {
 }
 
 func (j *OutboundMonitorJob) alert(msg string) {
-	if j.tgbotService.IsRunning() {
-		j.tgbotService.SendMsgToTgbotAdmins(msg)
-	}
+	j.tgbotService.NotifyEvent(service.TgEventOutbound, msg)
 }

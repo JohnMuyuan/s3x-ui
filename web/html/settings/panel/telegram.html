@@ -44,24 +44,32 @@
             </template>
         </a-setting-list-item>
         <a-setting-list-item paddings="small">
-            <template #title>{{ i18n "pages.settings.tgNotifyBackup" }}</template>
-            <template #description>{{ i18n "pages.settings.tgNotifyBackupDesc" }}</template>
+            <template #title>{{ i18n "pages.settings.tgNotifyEvents" }}</template>
+            <template #description>{{ i18n "pages.settings.tgNotifyEventsDesc" }}</template>
             <template #control>
-                <a-switch v-model="allSetting.tgBotBackup"></a-switch>
-            </template>
-        </a-setting-list-item>
-        <a-setting-list-item paddings="small">
-            <template #title>{{ i18n "pages.settings.tgNotifyLogin" }}</template>
-            <template #description>{{ i18n "pages.settings.tgNotifyLoginDesc" }}</template>
-            <template #control>
-                <a-switch v-model="allSetting.tgBotLoginNotify"></a-switch>
+                <a-select mode="multiple" v-model="tgEvents" :dropdown-class-name="themeSwitcher.currentTheme" :style="{ width: '100%' }">
+                    <a-select-option value="report">{{ i18n "pages.settings.tgEventReport" }}</a-select-option>
+                    <a-select-option value="backup">{{ i18n "pages.settings.tgNotifyBackup" }}</a-select-option>
+                    <a-select-option value="login">{{ i18n "pages.settings.tgNotifyLogin" }}</a-select-option>
+                    <a-select-option value="cpu">{{ i18n "pages.settings.tgEventCpu" }}</a-select-option>
+                    <a-select-option value="memory">{{ i18n "pages.settings.tgEventMemory" }}</a-select-option>
+                    <a-select-option value="outbound">{{ i18n "pages.settings.tgEventOutbound" }}</a-select-option>
+                    <a-select-option value="xray">{{ i18n "pages.settings.tgEventXray" }}</a-select-option>
+                </a-select>
             </template>
         </a-setting-list-item>
         <a-setting-list-item paddings="small">
             <template #title>{{ i18n "pages.settings.tgNotifyCpu" }}</template>
             <template #description>{{ i18n "pages.settings.tgNotifyCpuDesc" }}</template>
             <template #control>
-                <a-input-number :min="0" :min="100" v-model="allSetting.tgCpu" :style="{ width: '100%' }"></a-switch>
+                <a-input-number :min="0" :max="100" v-model="allSetting.tgCpu" :style="{ width: '100%' }"></a-input-number>
+            </template>
+        </a-setting-list-item>
+        <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.tgNotifyMemory" }}</template>
+            <template #description>{{ i18n "pages.settings.tgNotifyMemoryDesc" }}</template>
+            <template #control>
+                <a-input-number :min="0" :max="100" v-model="allSetting.tgMemory" :style="{ width: '100%' }"></a-input-number>
             </template>
         </a-setting-list-item>
     </a-collapse-panel>

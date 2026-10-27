@@ -1884,23 +1884,32 @@ func (t *Tgbot) SendMsgToTgbotAdmins(msg string, replyMarkup ...telego.ReplyMark
 }
 
 func (t *Tgbot) SendReport() {
-	runTime, err := t.settingService.GetTgbotRuntime()
-	if err == nil && len(runTime) > 0 {
-		msg := ""
-		msg += t.I18nBot("tgbot.messages.report", "RunTime=="+runTime)
-		msg += t.I18nBot("tgbot.messages.datetime", "DateTime=="+time.Now().Format("2006-01-02 15:04:05"))
-		t.SendMsgToTgbotAdmins(msg)
+	if t.settingService.TgEventEnabled(TgEventReport) {
+		runTime, err := t.settingService.GetTgbotRuntime()
+		if err == nil && len(runTime) > 0 {
+			msg := ""
+			msg += t.I18nBot("tgbot.messages.report", "RunTime=="+runTime)
+			msg += t.I18nBot("tgbot.messages.datetime", "DateTime=="+time.Now().Format("2006-01-02 15:04:05"))
+			t.SendMsgToTgbotAdmins(msg)
+		}
+
+		info := t.sendServerUsage()
+		t.SendMsgToTgbotAdmins(info)
+
+		t.sendExhaustedToAdmins()
 	}
-
-	info := t.sendServerUsage()
-	t.SendMsgToTgbotAdmins(info)
-
-	t.sendExhaustedToAdmins()
 	t.notifyExhausted()
 
-	backupEnable, err := t.settingService.GetTgBotBackup()
-	if err == nil && backupEnable {
+	if t.settingService.TgEventEnabled(TgEventBackup) {
 		t.SendBackupToAdmins()
+	}
+}
+
+// NotifyEvent sends an alert to the admins when its event is chosen in the
+// bot settings.
+func (t *Tgbot) NotifyEvent(event, msg string) {
+	if t.IsRunning() && t.settingService.TgEventEnabled(event) {
+		t.SendMsgToTgbotAdmins(msg)
 	}
 }
 
@@ -2002,8 +2011,7 @@ func (t *Tgbot) UserLoginNotify(username string, password string, ip string, tim
 		return
 	}
 
-	loginNotifyEnabled, err := t.settingService.GetTgBotLoginNotify()
-	if err != nil || !loginNotifyEnabled {
+	if !t.settingService.TgEventEnabled(TgEventLogin) {
 		return
 	}
 
