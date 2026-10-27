@@ -107,6 +107,8 @@
 "stopXray" = "Dừng lại"
 "restartXray" = "Khởi động lại"
 "xraySwitch" = "Phiên bản"
+"accessLog" = "Access log"
+"accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "Chọn phiên bản mà bạn muốn chuyển đổi sang."
 "xraySwitchClickDesk" = "Hãy lựa chọn thận trọng, vì các phiên bản cũ có thể không tương thích với các cấu hình hiện tại."
 "xrayStatusUnknown" = "Không xác định"

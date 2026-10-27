@@ -107,6 +107,8 @@
 "stopXray" = "停止"
 "restartXray" = "重启"
 "xraySwitch" = "版本"
+"accessLog" = "访问日志"
+"accessLogDesc" = "记录每个连接的 Xray 访问日志（access.log）。客户端 IP 限制依赖它；关闭可减少磁盘写入。切换后会重启 Xray。"
 "xraySwitchClick" = "选择你要切换到的版本"
 "xraySwitchClickDesk" = "请谨慎选择，因为较旧版本可能与当前配置不兼容"
 "xrayStatusUnknown" = "未知"

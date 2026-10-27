@@ -107,6 +107,8 @@
 "stopXray" = "توقف"
 "restartXray" = "شروع‌مجدد"
 "xraySwitch" = "‌نسخه"
+"accessLog" = "Access log"
+"accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "نسخه مورد نظر را انتخاب کنید"
 "xraySwitchClickDesk" = "لطفا بادقت انتخاب کنید. درصورت انتخاب نسخه قدیمی‌تر، امکان ناهماهنگی با پیکربندی فعلی وجود دارد"
 "xrayStatusUnknown" = "ناشناخته"

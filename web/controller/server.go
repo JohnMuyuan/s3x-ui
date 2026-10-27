@@ -44,6 +44,8 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.POST("/realityScan", a.realityScan)
 	g.POST("/stopXrayService", a.stopXrayService)
 	g.POST("/restartXrayService", a.restartXrayService)
+	g.POST("/accessLog", a.getAccessLog)
+	g.POST("/accessLog/set", a.setAccessLog)
 	g.POST("/installXray/:version", a.installXray)
 	g.POST("/updateGeofile/:fileName", a.updateGeofile)
 	g.POST("/logs/:count", a.getLogs)
@@ -129,6 +131,18 @@ func (a *ServerController) restartXrayService(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.xray.restartSuccess"), err)
+}
+
+func (a *ServerController) getAccessLog(c *gin.Context) {
+	var xrayService service.XrayService
+	on, err := xrayService.AccessLogEnabled()
+	jsonObj(c, on, err)
+}
+
+func (a *ServerController) setAccessLog(c *gin.Context) {
+	var xrayService service.XrayService
+	err := xrayService.SetAccessLog(c.PostForm("enable") == "true")
+	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 }
 
 func (a *ServerController) getLogs(c *gin.Context) {

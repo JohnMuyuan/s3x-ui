@@ -107,6 +107,8 @@
 "stopXray" = "Parar"
 "restartXray" = "Reiniciar"
 "xraySwitch" = "Versão"
+"accessLog" = "Access log"
+"accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "Escolha a versão para a qual deseja alternar."
 "xraySwitchClickDesk" = "Escolha com cuidado, pois versões mais antigas podem não ser compatíveis com as configurações atuais."
 "xrayStatusUnknown" = "Desconhecido"

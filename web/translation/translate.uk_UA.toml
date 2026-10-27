@@ -107,6 +107,8 @@
 "stopXray" = "Зупинити"
 "restartXray" = "Перезапустити"
 "xraySwitch" = "Версія"
+"accessLog" = "Access log"
+"accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "Виберіть версію, на яку ви хочете перейти."
 "xraySwitchClickDesk" = "Вибирайте уважно, оскільки старіші версії можуть бути несумісними з поточними конфігураціями."
 "xrayStatusUnknown" = "Невідомо"

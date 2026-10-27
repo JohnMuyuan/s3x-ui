@@ -107,6 +107,8 @@
 "stopXray" = "Durdur"
 "restartXray" = "Yeniden Başlat"
 "xraySwitch" = "Sürüm"
+"accessLog" = "Access log"
+"accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "Geçiş yapmak istediğiniz sürümü seçin."
 "xraySwitchClickDesk" = "Dikkatli seçin, eski sürümler mevcut yapılandırmalarla uyumlu olmayabilir."
 "xrayStatusUnknown" = "Bilinmiyor"

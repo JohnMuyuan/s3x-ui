@@ -187,6 +187,12 @@
                       <a-icon type="reload"></a-icon>
                       <span v-if="!isMobile">{{ i18n "pages.index.restartXray" }}</span>
                     </a-space>
+                    <a-tooltip :overlay-class-name="themeSwitcher.currentTheme" title='{{ i18n "pages.index.accessLogDesc" }}'>
+                      <a-space direction="horizontal" class="access-log-toggle" :style="{ justifyContent: 'center' }">
+                        <a-switch size="small" :checked="accessLog" :loading="accessLogBusy" @change="setAccessLog"></a-switch>
+                        <span v-if="!isMobile">{{ i18n "pages.index.accessLog" }}</span>
+                      </a-space>
+                    </a-tooltip>
                     <a-space direction="horizontal" @click="openSelectV2rayVersion" :style="{ justifyContent: 'center' }">
                       <a-icon type="tool"></a-icon>
                       <span v-if="!isMobile">
@@ -632,7 +638,9 @@
             backupModal,
             loadingTip: '{{ i18n "loading"}}',
             showAlert: false,
-            showIp: false
+            showIp: false,
+            accessLog: false,
+            accessLogBusy: false
         },
         methods: {
             loading(spinning, tip = '{{ i18n "loading"}}') {
@@ -711,6 +719,16 @@
                     return;
                 }
             },
+            async getAccessLog() {
+                const msg = await HttpUtil.post('server/accessLog');
+                if (msg.success) this.accessLog = msg.obj;
+            },
+            async setAccessLog(enable) {
+                this.accessLogBusy = true;
+                await HttpUtil.post('server/accessLog/set', { enable });
+                await this.getAccessLog();
+                this.accessLogBusy = false;
+            },
             async openLogs(){
                 logModal.loading = true;
                 const msg = await HttpUtil.post('server/logs/'+logModal.rows,{level: logModal.level, syslog: logModal.syslog});
@@ -773,6 +791,7 @@
             if (window.location.protocol !== "https:") {
                 this.showAlert = true;
             }
+            this.getAccessLog();
             while (true) {
                 try {
                     await this.getStatus();
