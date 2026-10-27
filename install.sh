@@ -182,7 +182,7 @@ install_x-ui() {
     cd x-ui
     chmod +x x-ui
 
-    chmod +x x-ui bin/xray-linux-$(arch) bin/sbcore-linux-$(arch)
+    chmod +x x-ui bin/xray-linux-$(arch) bin/sbcore-linux-$(arch) bin/mtg-linux-$(arch)
     cp -f x-ui.service /etc/systemd/system/
     # The menu script ships in the release, so it always matches the binary.
     cp -f x-ui.sh /usr/bin/x-ui

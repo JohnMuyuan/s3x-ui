@@ -15,6 +15,7 @@ type XrayTrafficJob struct {
 	inboundService  service.InboundService
 	outboundService service.OutboundService
 	singboxService  service.SingboxService
+	mtprotoService  service.MtprotoService
 }
 
 func NewXrayTrafficJob() *XrayTrafficJob {
@@ -31,6 +32,11 @@ func (j *XrayTrafficJob) Run() {
 		}
 	}
 	if t, c, err := j.singboxService.GetTraffic(); err == nil {
+		traffics = append(traffics, t...)
+		clientTraffics = append(clientTraffics, c...)
+		collected = true
+	}
+	if t, c := j.mtprotoService.GetTraffic(); len(t) > 0 {
 		traffics = append(traffics, t...)
 		clientTraffics = append(clientTraffics, c...)
 		collected = true

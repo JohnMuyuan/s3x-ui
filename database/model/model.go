@@ -30,10 +30,13 @@ const (
 	Naive     Protocol = "naive"
 	ShadowTLS Protocol = "shadowtls"
 	Snell     Protocol = "snell"
+
+	// Served by mtg-multi processes.
+	MTProto Protocol = "mtproto"
 )
 
-// SingboxTagPrefix marks inbounds that live in sbcore, so Xray API calls on
-// their tags can be routed there without a database lookup.
+// SingboxTagPrefix marks inbounds that live in a sidecar (sbcore or mtg), so
+// Xray API calls on their tags can be routed there without a database lookup.
 const SingboxTagPrefix = "sb-"
 
 func (p Protocol) IsSingbox() bool {
@@ -47,7 +50,12 @@ func (p Protocol) IsSingbox() bool {
 // KeysClientsByEmail reports protocols whose clients are addressed by email
 // rather than by id or password in client edit and delete calls.
 func (p Protocol) KeysClientsByEmail() bool {
-	return p == Shadowsocks || p == MASQUE || p.IsSingbox()
+	return p == Shadowsocks || p == MASQUE || p.IsSidecar()
+}
+
+// IsSidecar reports protocols Xray does not run: sbcore's and MTProto.
+func (p Protocol) IsSidecar() bool {
+	return p.IsSingbox() || p == MTProto
 }
 
 func IsSingboxTag(tag string) bool {
@@ -59,7 +67,7 @@ func InboundTag(listen string, port int, protocol Protocol) string {
 	if listen != "" && listen != "0.0.0.0" && listen != "::" && listen != "::0" {
 		tag = fmt.Sprintf("inbound-%v:%v", listen, port)
 	}
-	if protocol.IsSingbox() {
+	if protocol.IsSidecar() {
 		tag = SingboxTagPrefix + tag
 	}
 	return tag

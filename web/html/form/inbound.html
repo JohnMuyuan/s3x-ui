@@ -12,10 +12,13 @@
         <a-select v-model="inbound.protocol" :disabled="isEdit" :dropdown-class-name="themeSwitcher.currentTheme"
             :dropdown-menu-style="{ maxHeight: '600px' }" @change="protocolChange">
             <a-select-opt-group label="Xray">
-                <a-select-option v-for="p in Object.values(Protocols).filter(p => !isSingboxProtocol(p))" :key="p" :value="p">[[ p ]]</a-select-option>
+                <a-select-option v-for="p in Object.values(Protocols).filter(p => !isSingboxProtocol(p) && p !== Protocols.MTPROTO)" :key="p" :value="p">[[ p ]]</a-select-option>
             </a-select-opt-group>
             <a-select-opt-group label="sing-box">
                 <a-select-option v-for="p in SINGBOX_PROTOCOLS" :key="p" :value="p">[[ p ]]</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="Telegram">
+                <a-select-option :value="Protocols.MTPROTO">mtproto</a-select-option>
             </a-select-opt-group>
         </a-select>
     </a-form-item>
@@ -119,6 +122,11 @@
     {{template "form/tun"}}
 </template>
 
+<!-- mtproto, served by mtg -->
+<template v-if="inbound.protocol === Protocols.MTPROTO">
+    {{template "form/mtproto"}}
+</template>
+
 <!-- sing-box protocols, served by sbcore -->
 <template v-if="inbound.isSingbox">
     {{template "form/singbox"}}
@@ -136,7 +144,7 @@
 </template>
 
 <!-- sniffing -->
-<a-collapse v-if="!inbound.isSingbox">
+<a-collapse v-if="!inbound.isSingbox && inbound.protocol !== Protocols.MTPROTO">
     <a-collapse-panel header='Sniffing'>
         {{template "form/sniffing"}}
     </a-collapse-panel>

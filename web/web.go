@@ -18,6 +18,7 @@ import (
 
 	"x-ui/config"
 	"x-ui/logger"
+	"x-ui/mtproto"
 	"x-ui/util/common"
 	"x-ui/web/controller"
 	"x-ui/web/job"
@@ -406,6 +407,7 @@ func (s *Server) Stop() error {
 	if err := new(service.SingboxService).Stop(); err != nil {
 		logger.Warning("stop sbcore failed:", err)
 	}
+	mtproto.GetManager().StopAll()
 	if s.cron != nil {
 		s.cron.Stop()
 	}

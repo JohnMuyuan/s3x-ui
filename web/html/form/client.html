@@ -24,7 +24,7 @@
                 {{ i18n "password" }}
                 <a-icon v-if="inbound.protocol === Protocols.SHADOWSOCKS" @click="client.password = RandomUtil.randomShadowsocksPassword(inbound.settings.method)" type="sync"></a-icon>
                 <a-icon v-if="inbound.protocol === Protocols.TROJAN" @click="client.password = RandomUtil.randomSeq(10)"type="sync"> </a-icon>
-                <a-icon v-if="keysClientsByEmail(inbound.protocol)" @click="client.password = RandomUtil.randomSeq(16)" type="sync"></a-icon>
+                <a-icon v-if="keysClientsByEmail(inbound.protocol)" @click="client.password = randomClientPassword(inbound.protocol)" type="sync"></a-icon>
             </a-tooltip>
         </template>
         <a-input v-model.trim="client.password"></a-input>
@@ -72,7 +72,7 @@
     <a-form-item v-if="client.email" label='{{ i18n "comment" }}'>
         <a-input v-model.trim="client.comment"></a-input>
     </a-form-item>
-    <a-form-item v-if="app.ipLimitEnable">
+    <a-form-item v-if="app.ipLimitEnable && inbound.protocol !== Protocols.MTPROTO">
         <template slot="label">
             <a-tooltip>
                 <template slot="title">

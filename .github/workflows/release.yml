@@ -88,7 +88,16 @@ jobs:
           wget -q -O geoip_RU.dat https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -q -O geosite_RU.dat https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geosite.dat
           mv xray xray-linux-${{ matrix.platform }}
-          chmod +x xray-linux-${{ matrix.platform }} sbcore-linux-${{ matrix.platform }}
+          # mtg-multi serves MTProto inbounds
+          MTG_VER=1.16.1
+          MTG_PKG=mtg-multi-${MTG_VER}-linux-${{ matrix.platform }}
+          wget -q https://github.com/mhsanaei/mtg-multi/releases/download/v${MTG_VER}/${MTG_PKG}.tar.gz
+          wget -q https://github.com/mhsanaei/mtg-multi/releases/download/v${MTG_VER}/mtg-multi-${MTG_VER}-checksums.txt
+          grep " ${MTG_PKG}.tar.gz\$" mtg-multi-${MTG_VER}-checksums.txt | sha256sum -c -
+          tar -xzf ${MTG_PKG}.tar.gz
+          mv ${MTG_PKG}/mtg-multi mtg-linux-${{ matrix.platform }}
+          rm -rf ${MTG_PKG} ${MTG_PKG}.tar.gz mtg-multi-${MTG_VER}-checksums.txt
+          chmod +x xray-linux-${{ matrix.platform }} sbcore-linux-${{ matrix.platform }} mtg-linux-${{ matrix.platform }}
 
       - name: Package
         run: tar -zcvf x-ui-linux-${{ matrix.platform }}.tar.gz x-ui

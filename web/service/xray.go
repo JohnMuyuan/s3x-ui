@@ -87,7 +87,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		if !inbound.Enable {
 			continue
 		}
-		if inbound.Protocol.IsSingbox() {
+		if inbound.Protocol.IsSidecar() {
 			hasSingbox = true
 			continue
 		}

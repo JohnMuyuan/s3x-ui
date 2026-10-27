@@ -16,6 +16,7 @@ const Protocols = {
     NAIVE: 'naive',
     SHADOWTLS: 'shadowtls',
     SNELL: 'snell',
+    MTPROTO: 'mtproto',
 };
 
 // Served by the sbcore sing-box sidecar rather than Xray.
@@ -30,7 +31,12 @@ function isSingboxProtocol(protocol) {
 
 // Clients made of an email and a password, told apart by email.
 function keysClientsByEmail(protocol) {
-    return isSingboxProtocol(protocol) || protocol === Protocols.MASQUE;
+    return isSingboxProtocol(protocol) || protocol === Protocols.MASQUE || protocol === Protocols.MTPROTO;
+}
+
+// A fresh password for such a client; an MTProto client's is its 16-byte key.
+function randomClientPassword(protocol) {
+    return protocol === Protocols.MTPROTO ? RandomUtil.randomSeq(32, { type: 'hex' }) : RandomUtil.randomSeq(16);
 }
 
 const SSMethods = {
@@ -1794,6 +1800,8 @@ class Inbound extends XrayCommonClass {
                 return this.genVmessLink(address, port, forceTls, remark, client.id, client.security);
             case Protocols.VLESS:
                 return this.genVLESSLink(address, port, forceTls, remark, client.id, client.flow);
+            case Protocols.MTPROTO:
+                return this.genMtprotoLink(address, port, client);
             case Protocols.SHADOWSOCKS:
                 return this.genSSLink(address, port, forceTls, remark, this.isSSMultiUser ? client.password : '');
             case Protocols.TROJAN:
@@ -1801,6 +1809,14 @@ class Inbound extends XrayCommonClass {
             default:
                 return this.isSingbox ? this.genSingboxLink(address, port, remark, client) : '';
         }
+    }
+
+    // Telegram's proxy link. It has no name field, so no remark is added.
+    genMtprotoLink(address, port, client) {
+        const secret = this.settings.secretFor(client);
+        if (!secret) return '';
+        const params = new URLSearchParams({ server: address, port, secret });
+        return `https://t.me/proxy?${params.toString()}`;
     }
 
     // ShadowTLS, Naive and Snell have no common URI scheme, so each uses a form
@@ -1982,6 +1998,7 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.WIREGUARD: return new Inbound.WireguardSettings(protocol);
             case Protocols.MASQUE: return new Inbound.MasqueSettings(protocol);
             case Protocols.TUN: return new Inbound.TunSettings(protocol);
+            case Protocols.MTPROTO: return new Inbound.MtprotoSettings(protocol);
             default: return isSingboxProtocol(protocol) ? new Inbound.SingboxSettings(protocol) : null;
         }
     }
@@ -1998,6 +2015,7 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.WIREGUARD: return Inbound.WireguardSettings.fromJson(json);
             case Protocols.MASQUE: return Inbound.MasqueSettings.fromJson(protocol, json);
             case Protocols.TUN: return Inbound.TunSettings.fromJson(protocol, json);
+            case Protocols.MTPROTO: return Inbound.MtprotoSettings.fromJson(protocol, json);
             default: return isSingboxProtocol(protocol) ? Inbound.SingboxSettings.fromJson(protocol, json) : null;
         }
     }
@@ -2815,6 +2833,55 @@ Inbound.MasqueSettings = class extends Inbound.Settings {
     }
 };
 
+// MTProto is served by mtg. Each client's password is its 16-byte key in hex;
+// with the FakeTLS domain it makes the secret Telegram connects with.
+Inbound.MtprotoSettings = class extends Inbound.Settings {
+    constructor(protocol, clients = [new Inbound.SingboxSettings.Client(protocol)], fakeTlsDomain = 'www.cloudflare.com',
+        preferIp = '', frontingHost = '', frontingPort = 0, maxConnections = 0) {
+        super(protocol);
+        this.clients = clients;
+        this.fakeTlsDomain = fakeTlsDomain;
+        this.preferIp = preferIp;
+        this.frontingHost = frontingHost;
+        this.frontingPort = frontingPort;
+        this.maxConnections = maxConnections;
+    }
+
+    static validKey(key) {
+        return /^[0-9a-fA-F]{32}$/.test(key || '');
+    }
+
+    secretFor(client) {
+        if (!Inbound.MtprotoSettings.validKey(client.password) || !this.fakeTlsDomain) return '';
+        const domain = Array.from(new TextEncoder().encode(this.fakeTlsDomain), b => b.toString(16).padStart(2, '0')).join('');
+        return 'ee' + client.password.toLowerCase() + domain;
+    }
+
+    static fromJson(protocol, json = {}) {
+        return new Inbound.MtprotoSettings(
+            protocol,
+            (json.clients || []).map(c => Inbound.SingboxSettings.Client.fromJson(protocol, c)),
+            json.fakeTlsDomain || '',
+            json.preferIp || '',
+            json.frontingHost || '',
+            json.frontingPort || 0,
+            json.maxConnections || 0,
+        );
+    }
+
+    toJson() {
+        const json = {
+            clients: Inbound.MtprotoSettings.toJsonArray(this.clients),
+            fakeTlsDomain: this.fakeTlsDomain,
+        };
+        if (this.preferIp) json.preferIp = this.preferIp;
+        if (this.frontingHost) json.frontingHost = this.frontingHost;
+        if (this.frontingPort > 0) json.frontingPort = this.frontingPort;
+        if (this.maxConnections > 0) json.maxConnections = this.maxConnections;
+        return json;
+    }
+};
+
 // Xray's TUN inbound runs on a network interface rather than a port. Routing
 // the server's own traffic into it (autoSystemRoutingTable) can cut off SSH,
 // so it stays empty unless set on purpose.
@@ -2962,7 +3029,7 @@ Inbound.SingboxSettings.Client = class extends XrayCommonClass {
     constructor(
         protocol,
         email = RandomUtil.randomLowerAndNum(8),
-        password = RandomUtil.randomSeq(16),
+        password = randomClientPassword(protocol),
         id = protocol === Protocols.TUIC ? RandomUtil.randomUUID() : '',
         limitIp = 0,
         totalGB = 0,

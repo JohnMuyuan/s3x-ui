@@ -136,6 +136,7 @@ class DBInbound {
             case Protocols.VLESS:
             case Protocols.TROJAN:
             case Protocols.SHADOWSOCKS:
+            case Protocols.MTPROTO:
                 return true;
             default:
                 return isSingboxProtocol(this.protocol);

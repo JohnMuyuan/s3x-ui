@@ -154,6 +154,13 @@ func (s *SubService) getFallbackMaster(dest string, streamSettings string) (stri
 }
 
 func (s *SubService) getLink(inbound *model.Inbound, email string) string {
+	// XDRIVE has no link format, and one would hand out its storage secrets.
+	var stream struct {
+		Network string `json:"network"`
+	}
+	if json.Unmarshal([]byte(inbound.StreamSettings), &stream) == nil && stream.Network == "xdrive" {
+		return ""
+	}
 	switch inbound.Protocol {
 	case "vmess":
 		return s.genVmessLink(inbound, email)
