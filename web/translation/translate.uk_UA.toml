@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "Інформувати зовнішній API про кожне оновлення трафіку."
 "externalTrafficInformURI" = "Інформаційний URI зовнішнього трафіку"
 "externalTrafficInformURIDesc" = "Оновлення трафіку надсилаються на цей URI."
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "Фрагментація"
 "fragmentDesc" = "Увімкнути фрагментацію для пакету привітання TLS"
 "fragmentSett" = "Параметри фрагментації"

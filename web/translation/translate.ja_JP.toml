@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "トラフィックの更新ごとに外部 API に通知します。"
 "externalTrafficInformURI" = "外部トラフィック通知 URI"
 "externalTrafficInformURIDesc" = "トラフィックの更新ごとに外部 API に通知します。"
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "フラグメント"
 "fragmentDesc" = "TLS helloパケットのフラグメントを有効にする"
 "fragmentSett" = "設定"

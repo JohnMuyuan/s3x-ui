@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "每次流量更新时通知外部 API"
 "externalTrafficInformURI" = "外部流量通知 URI"
 "externalTrafficInformURIDesc" = "流量更新将发送到此 URI"
+"ipLimitAllowlist" = "IP 限制白名单"
+"ipLimitAllowlistDesc" = "这些地址不计入客户端的 IP 数量限制，也不会被封禁，适合多人共用出口的公司或运营商 NAT。每项一个 CIDR 或 IP，用逗号或换行分隔。"
 "fragment" = "分片"
 "fragmentDesc" = "启用 TLS hello 数据包分片"
 "fragmentSett" = "设置"

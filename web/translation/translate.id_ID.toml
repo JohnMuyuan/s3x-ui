@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "Inform external API on every traffic update."
 "externalTrafficInformURI" = "Lalu Lintas Eksternal Menginformasikan URI"
 "externalTrafficInformURIDesc" = "Pembaruan lalu lintas dikirim ke URI ini."
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "Fragmentasi"
 "fragmentDesc" = "Aktifkan fragmentasi untuk paket hello TLS"
 "fragmentSett" = "Pengaturan Fragmentasi"

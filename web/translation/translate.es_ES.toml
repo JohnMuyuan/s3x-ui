@@ -394,6 +394,8 @@
 "externalTrafficInformEnableDesc" = "Informar a la API externa sobre cada actualización de tráfico."
 "externalTrafficInformURI" = "URI de información de tráfico externo"
 "externalTrafficInformURIDesc" = "Las actualizaciones de tráfico se envían a este URI."
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "subURIDesc" = "Cambiar el URI base de la URL de suscripción para usar detrás de los servidores proxy"
 "fragment" = "Fragmentación"
 "fragmentDesc" = "Habilitar la fragmentación para el paquete de saludo de TLS"

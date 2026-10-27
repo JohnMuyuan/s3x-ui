@@ -389,6 +389,8 @@
 "externalTrafficInformEnableDesc" = "مصرف ترافیک به سرویس خارجی ارسال می شود"
 "externalTrafficInformURI" = "لینک اطلاع رسانی خارجی مصرف ترافیک"
 "externalTrafficInformURIDesc" = "ترافیک های مصرفی به این لینک هم ارسال می شود"
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "subEncrypt" = "کدگذاری"
 "subEncryptDesc" = "کدگذاری خواهدشد Base64 محتوای برگشتی سرویس سابسکریپشن برپایه"
 "subShowInfo" = "نمایش اطلاعات مصرف"

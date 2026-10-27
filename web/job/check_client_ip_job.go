@@ -24,6 +24,7 @@ import (
 type CheckClientIpJob struct {
 	lastClear     int64
 	disAllowedIps []string
+	allowlist     ipLimitAllowlist
 }
 
 var job *CheckClientIpJob
@@ -44,6 +45,7 @@ func (j *CheckClientIpJob) Run() {
 	isAccessLogAvailable := j.checkAccessLogAvailable(iplimitActive)
 
 	if iplimitActive {
+		j.allowlist = loadIpLimitAllowlist()
 		if f2bInstalled {
 			clientIps := map[string][]string{}
 			if isAccessLogAvailable {
@@ -341,10 +343,12 @@ func (j *CheckClientIpJob) updateInboundClientIps(inboundClientIps *model.Inboun
 			if limitIp > 0 && inbound.Enable {
 				shouldCleanLog = true
 
-				if limitIp < len(ips) {
-					j.disAllowedIps = append(j.disAllowedIps, ips[limitIp:]...)
-					for i := limitIp; i < len(ips); i++ {
-						log.Printf("[LIMIT_IP] Email = %s || SRC = %s", clientEmail, ips[i])
+				// allowlisted addresses are neither counted nor banned
+				limited := j.allowlist.limited(ips)
+				if limitIp < len(limited) {
+					j.disAllowedIps = append(j.disAllowedIps, limited[limitIp:]...)
+					for i := limitIp; i < len(limited); i++ {
+						log.Printf("[LIMIT_IP] Email = %s || SRC = %s", clientEmail, limited[i])
 					}
 				}
 			}

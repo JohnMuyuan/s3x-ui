@@ -73,6 +73,7 @@ var defaultValueMap = map[string]string{
 	"warp":                        "",
 	"externalTrafficInformEnable": "false",
 	"externalTrafficInformURI":    "",
+	"ipLimitAllowlist":            "",
 }
 
 type SettingService struct{}
@@ -535,6 +536,10 @@ func (s *SettingService) GetExternalTrafficInformURI() (string, error) {
 
 func (s *SettingService) SetExternalTrafficInformURI(InformURI string) error {
 	return s.setString("externalTrafficInformURI", InformURI)
+}
+
+func (s *SettingService) GetIpLimitAllowlist() (string, error) {
+	return s.getString("ipLimitAllowlist")
 }
 
 func (s *SettingService) GetIpLimitEnable() (bool, error) {

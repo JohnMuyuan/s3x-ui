@@ -393,6 +393,8 @@
 "externalTrafficInformEnableDesc" = "يبعت تنبيه لـ API خارجي مع كل تحديث للترافيك."
 "externalTrafficInformURI" = "مسار تنبيه الترافيك الخارجي"
 "externalTrafficInformURIDesc" = "تحديثات الترافيك هتتبعت للمسار ده."
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "تجزئة"
 "fragmentDesc" = "يفعل تجزئة لحزمة TLS hello."
 "fragmentSett" = "إعدادات التجزئة"

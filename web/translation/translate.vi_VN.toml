@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "Thông báo cho API bên ngoài về mọi cập nhật lưu lượng truy cập."
 "externalTrafficInformURI" = "URI thông báo lưu lượng truy cập bên ngoài"
 "externalTrafficInformURIDesc" = "Cập nhật lưu lượng truy cập được gửi tới URI này."
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "Sự phân mảnh"
 "fragmentDesc" = "Kích hoạt phân mảnh cho gói TLS hello"
 "fragmentSett" = "Cài đặt phân mảnh"

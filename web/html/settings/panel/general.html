@@ -125,6 +125,15 @@
             </template>
         </a-setting-list-item>
     </a-collapse-panel>
+    <a-collapse-panel key="6" header='{{ i18n "pages.inbounds.IPLimit" }}'>
+        <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.ipLimitAllowlist" }}</template>
+            <template #description>{{ i18n "pages.settings.ipLimitAllowlistDesc" }}</template>
+            <template #control>
+                <a-textarea v-model="allSetting.ipLimitAllowlist" :auto-size="{ minRows: 2, maxRows: 8 }" placeholder="10.0.0.0/8, 203.0.113.7"></a-textarea>
+            </template>
+        </a-setting-list-item>
+    </a-collapse-panel>
     <a-collapse-panel key="5" header='{{ i18n "pages.settings.dateAndTime" }}'>
         <a-setting-list-item paddings="small">
             <template #title>{{ i18n "pages.settings.timeZone"}}</template>

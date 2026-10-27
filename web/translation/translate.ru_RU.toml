@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "Информировать внешний API о каждом обновлении трафика"
 "externalTrafficInformURI" = "URI информации о внешнем трафике"
 "externalTrafficInformURIDesc" = "Обновления трафика отправляются на этот URI"
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "Фрагментация"
 "fragmentDesc" = "Включить фрагментацию TLS-хэндшейка"
 "fragmentSett" = "Настройки фрагментации"

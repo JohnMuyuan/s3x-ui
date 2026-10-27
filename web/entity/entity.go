@@ -3,6 +3,7 @@ package entity
 import (
 	"crypto/tls"
 	"net"
+	"net/netip"
 	"strings"
 	"time"
 	"math"
@@ -52,6 +53,7 @@ type AllSetting struct {
 	SubUpdates                  int    `json:"subUpdates" form:"subUpdates"`
 	ExternalTrafficInformEnable bool   `json:"externalTrafficInformEnable" form:"externalTrafficInformEnable"`
 	ExternalTrafficInformURI    string `json:"externalTrafficInformURI" form:"externalTrafficInformURI"`
+	IpLimitAllowlist            string `json:"ipLimitAllowlist" form:"ipLimitAllowlist"`
 	SubEncrypt                  bool   `json:"subEncrypt" form:"subEncrypt"`
 	SubShowInfo                 bool   `json:"subShowInfo" form:"subShowInfo"`
 	SubURI                      string `json:"subURI" form:"subURI"`
@@ -128,6 +130,18 @@ func (s *AllSetting) CheckValid() error {
 	_, err := time.LoadLocation(s.TimeLocation)
 	if err != nil {
 		return common.NewError("time location not exist:", s.TimeLocation)
+	}
+
+	// the IP limit job reads the same list; a typo there would silently count
+	// the address it was meant to spare
+	for _, field := range strings.FieldsFunc(s.IpLimitAllowlist, func(r rune) bool { return r == ',' || r == '\n' || r == '\r' }) {
+		field = strings.TrimSpace(field)
+		if _, err := netip.ParsePrefix(field); err == nil {
+			continue
+		}
+		if _, err := netip.ParseAddr(field); field != "" && err != nil {
+			return common.NewError("IP limit allowlist entry is not a CIDR or IP address:", field)
+		}
 	}
 
 	return nil

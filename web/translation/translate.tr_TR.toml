@@ -395,6 +395,8 @@
 "externalTrafficInformEnableDesc" = "Her trafik güncellemesinde harici API'yi bilgilendirin."
 "externalTrafficInformURI" = "Harici Trafik Bilgisi URI'si"
 "externalTrafficInformURIDesc" = "Trafik güncellemeleri bu URI'ye gönderildi."
+"ipLimitAllowlist" = "IP Limit Allowlist"
+"ipLimitAllowlistDesc" = "Addresses here are not counted towards a client's IP limit and are never banned, for offices or carrier NAT that many people share. One CIDR or IP per entry, separated by commas or new lines."
 "fragment" = "Parçalama"
 "fragmentDesc" = "TLS merhaba paketinin parçalanmasını etkinleştir."
 "fragmentSett" = "Parçalama Ayarları"
