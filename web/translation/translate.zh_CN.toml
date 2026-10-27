@@ -512,6 +512,15 @@
 "edit" = "编辑规则"
 "useComma" = "逗号分隔的项目"
 
+[pages.xray.geo]
+"title" = "Geo 数据"
+"lookupPlaceholder" = "查域名或 IP 属于哪些分类"
+"lookup" = "查询"
+"notFound" = "没有分类包含它"
+"searchCode" = "搜索分类"
+"entries" = "条"
+"first" = "显示前"
+
 [pages.xray.outbound]
 "down" = "不通"
 "test" = "测延迟"

@@ -1,6 +1,9 @@
 {{define "settings/xray/routing"}}
 <a-space direction="vertical" size="middle">
-    <a-button type="primary" icon="plus" @click="addRule">{{ i18n "pages.xray.rules.add" }}</a-button>
+    <a-space>
+        <a-button type="primary" icon="plus" @click="addRule">{{ i18n "pages.xray.rules.add" }}</a-button>
+        <a-button icon="global" @click="openGeo">{{ i18n "pages.xray.geo.title" }}</a-button>
+    </a-space>
     <a-table-sortable :columns="isMobile ? rulesMobileColumns : rulesColumns" bordered :row-key="r => r.key"
         :data-source="routingRuleData" :scroll="isMobile ? {} : { x: 1000 }" :pagination="false" :indent-size="0"
         v-on:onSort="replaceRule">
@@ -115,5 +118,38 @@
             </a-popover>
         </template>
     </a-table-sortable>
+    <a-modal v-model="geo.visible" :title='`{{ i18n "pages.xray.geo.title" }}`' :footer="null" width="760px" :class="themeSwitcher.currentTheme">
+        <a-space direction="vertical" :style="{ width: '100%' }">
+            <a-select v-model="geo.file" @change="geoSearch" :style="{ width: '100%' }" :dropdown-class-name="themeSwitcher.currentTheme">
+                <a-select-option v-for="f in geo.files" :key="f.name" :value="f.name">[[ f.name ]] ([[ SizeFormatter.sizeFormat(f.size) ]])</a-select-option>
+            </a-select>
+            <a-input-search v-model="geo.target" @search="geoLookup" :loading="geo.loading === 'lookup'"
+                placeholder='{{ i18n "pages.xray.geo.lookupPlaceholder" }}' enter-button='{{ i18n "pages.xray.geo.lookup" }}'></a-input-search>
+            <div v-if="geo.found">
+                <a-tag v-for="hit in geo.found" :key="hit" color="blue" class="geo-hit">[[ geoPrefix ]][[ hit ]]</a-tag>
+                <span v-if="!geo.found.length" class="geo-dim">{{ i18n "pages.xray.geo.notFound" }}</span>
+            </div>
+            <a-row :gutter="12">
+                <a-col :md="9">
+                    <a-input v-model="geo.query" @change="geoSearch" placeholder='{{ i18n "pages.xray.geo.searchCode" }}' allow-clear></a-input>
+                    <div class="geo-list">
+                        <div v-for="cat in geo.categories" :key="cat.code" class="geo-cat" :class="{ active: geo.code === cat.code }" @click="geoEntries(cat.code)">
+                            <span>[[ cat.code ]]</span><span class="geo-dim">[[ cat.count ]]</span>
+                        </div>
+                    </div>
+                </a-col>
+                <a-col :md="15">
+                    <template v-if="geo.code">
+                        <div class="geo-head">
+                            <code>[[ geoPrefix ]][[ geo.code ]]</code>
+                            <a-button size="small" icon="copy" @click="ClipboardManager.copyText(geoPrefix + geo.code)"></a-button>
+                            <span class="geo-dim">[[ geo.total ]] {{ i18n "pages.xray.geo.entries" }}<template v-if="geo.total > geo.entries.length">, {{ i18n "pages.xray.geo.first" }} [[ geo.entries.length ]]</template></span>
+                        </div>
+                        <pre class="geo-entries">[[ geo.entries.join('\n') ]]</pre>
+                    </template>
+                </a-col>
+            </a-row>
+        </a-space>
+    </a-modal>
 </a-space>
 {{end}}

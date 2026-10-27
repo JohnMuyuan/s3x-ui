@@ -37,6 +37,19 @@
   .ant-collapse-content-box .ant-alert {
     margin-block-end: 12px;
   }
+  .outbound-sub { padding: 8px 0; border-bottom: 1px solid rgba(128, 128, 128, .15); }
+  .outbound-sub:last-child { border-bottom: none; }
+  .outbound-sub-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .outbound-sub-meta { opacity: .6; font-size: 12px; flex: 1; }
+  .outbound-sub-tags { margin-top: 6px; }
+  .outbound-sub-tag { cursor: pointer; margin-bottom: 4px; }
+  .geo-list, .geo-entries { height: 360px; overflow-y: auto; margin-top: 8px; }
+  .geo-cat { display: flex; justify-content: space-between; padding: 2px 8px; cursor: pointer; border-radius: 4px; }
+  .geo-cat:hover, .geo-cat.active { background: rgba(0, 135, 113, .15); }
+  .geo-dim { opacity: .6; font-size: 12px; }
+  .geo-head { display: flex; align-items: center; gap: 8px; }
+  .geo-entries { font-size: 12px; padding: 8px; background: rgba(128, 128, 128, .08); border-radius: 4px; }
+  .geo-hit { margin-bottom: 4px; }
 </style>
 {{ template "page/head_end" .}}
 
@@ -266,6 +279,7 @@
       outboundStatus: {},
       testingOutbound: '',
       outboundSubs: [],
+      geo: { visible: false, files: [], file: '', query: '', categories: [], code: '', entries: [], total: 0, target: '', found: null, loading: '' },
       refreshingSub: 0,
       outboundSubModal: { visible: false, loading: false, form: {} },
       saveBtnDisable: true,
@@ -393,6 +407,37 @@
     methods: {
       loading(spinning = true) {
         this.loadingStates.spinning = spinning;
+      },
+      async openGeo() {
+        this.geo.visible = true;
+        const msg = await HttpUtil.post("/panel/xray/geo/files");
+        if (!msg.success) return;
+        this.geo.files = msg.obj || [];
+        if (!this.geo.file && this.geo.files.length) {
+          this.geo.file = (this.geo.files.find(f => f.name === 'geosite.dat') || this.geo.files[0]).name;
+        }
+        this.geoSearch();
+      },
+      async geoSearch() {
+        this.geo.code = '';
+        this.geo.found = null;
+        const msg = await HttpUtil.post("/panel/xray/geo/categories", { file: this.geo.file, query: this.geo.query || '' });
+        if (msg.success) this.geo.categories = msg.obj || [];
+      },
+      async geoEntries(code) {
+        this.geo.code = code;
+        const msg = await HttpUtil.post("/panel/xray/geo/entries", { file: this.geo.file, code });
+        if (msg.success) {
+          this.geo.entries = msg.obj.entries || [];
+          this.geo.total = msg.obj.total;
+        }
+      },
+      async geoLookup() {
+        if (!this.geo.target) return;
+        this.geo.loading = 'lookup';
+        const msg = await HttpUtil.post("/panel/xray/geo/lookup", { file: this.geo.file, target: this.geo.target });
+        this.geo.loading = '';
+        if (msg.success) this.geo.found = msg.obj || [];
       },
       async getOutboundSubs() {
         const msg = await HttpUtil.post("/panel/xray/outboundSubs");
@@ -1052,6 +1097,13 @@
     },
     computed: {
       // the tags subscriptions add, for routing rules and balancers
+      // a rule names a category geosite:xxx, or for geosite_IR.dat ext:geosite_IR.dat:xxx
+      geoPrefix() {
+        const f = this.geo.file;
+        if (f === 'geosite.dat') return 'geosite:';
+        if (f === 'geoip.dat') return 'geoip:';
+        return `ext:${f}:`;
+      },
       subOutboundTags() {
         return this.outboundSubs.filter(s => s.enable).flatMap(s => s.tags || []);
       },

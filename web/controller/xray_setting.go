@@ -19,6 +19,7 @@ type XraySettingController struct {
 	WarpService        service.WarpService
 
 	OutboundSubscriptionService service.OutboundSubscriptionService
+	GeodataService              service.GeodataService
 }
 
 func NewXraySettingController(g *gin.RouterGroup) *XraySettingController {
@@ -33,6 +34,10 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/", a.getXraySetting)
 	g.POST("/update", a.updateSetting)
 	g.POST("/outboundStatus", a.outboundStatus)
+	g.POST("/geo/files", a.geoFiles)
+	g.POST("/geo/categories", a.geoCategories)
+	g.POST("/geo/entries", a.geoEntries)
+	g.POST("/geo/lookup", a.geoLookup)
 	g.POST("/outboundSubs", a.outboundSubs)
 	g.POST("/outboundSub/save", a.saveOutboundSub)
 	g.POST("/outboundSub/del/:id", a.delOutboundSub)
@@ -102,6 +107,25 @@ func (a *XraySettingController) refreshOutboundSub(c *gin.Context) {
 		a.XrayService.SetToNeedRestart()
 	}
 	jsonMsg(c, I18nWeb(c, "pages.xray.outbound.subRefresh"), err)
+}
+
+func (a *XraySettingController) geoFiles(c *gin.Context) {
+	jsonObj(c, a.GeodataService.Files(), nil)
+}
+
+func (a *XraySettingController) geoCategories(c *gin.Context) {
+	cats, err := a.GeodataService.Categories(c.PostForm("file"), c.PostForm("query"))
+	jsonObj(c, cats, err)
+}
+
+func (a *XraySettingController) geoEntries(c *gin.Context) {
+	entries, total, err := a.GeodataService.Entries(c.PostForm("file"), c.PostForm("code"), 1000)
+	jsonObj(c, gin.H{"entries": entries, "total": total}, err)
+}
+
+func (a *XraySettingController) geoLookup(c *gin.Context) {
+	found, err := a.GeodataService.Lookup(c.PostForm("file"), c.PostForm("target"))
+	jsonObj(c, found, err)
 }
 
 func (a *XraySettingController) outboundStatus(c *gin.Context) {

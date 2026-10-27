@@ -514,6 +514,15 @@
 "edit" = "編輯規則"
 "useComma" = "逗號分隔的項目"
 
+[pages.xray.geo]
+"title" = "Geo 資料"
+"lookupPlaceholder" = "查網域或 IP 屬於哪些分類"
+"lookup" = "查詢"
+"notFound" = "沒有分類包含它"
+"searchCode" = "搜尋分類"
+"entries" = "條"
+"first" = "顯示前"
+
 [pages.xray.outbound]
 "down" = "不通"
 "test" = "測延遲"

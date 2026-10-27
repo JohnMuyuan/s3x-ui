@@ -509,6 +509,15 @@
 "edit" = "Edit Rule"
 "useComma" = "Comma-separated items"
 
+[pages.xray.geo]
+"title" = "Geo Data"
+"lookupPlaceholder" = "Which categories hold a domain or IP?"
+"lookup" = "Look up"
+"notFound" = "No category holds it"
+"searchCode" = "Search categories"
+"entries" = "entries"
+"first" = "showing the first"
+
 [pages.xray.outbound]
 "down" = "Down"
 "test" = "Test delay"
