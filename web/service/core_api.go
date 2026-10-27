@@ -53,5 +53,11 @@ func (c *coreAPI) RemoveUser(inboundTag, email string) error {
 		RequestSingboxApply()
 		return nil
 	}
-	return c.xray.RemoveUser(inboundTag, email)
+	// read first: Xray drops a user's online map along with the user
+	ips, _ := c.xray.GetUserOnlineIPs(email)
+	err := c.xray.RemoveUser(inboundTag, email)
+	if err == nil && len(ips) > 0 && p != nil {
+		kickXrayUser(p.GetAPIPort(), inboundTag, email, ips)
+	}
+	return err
 }

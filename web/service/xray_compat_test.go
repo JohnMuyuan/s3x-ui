@@ -119,3 +119,21 @@ func TestUnrunnableXDrive(t *testing.T) {
 		})
 	}
 }
+
+func TestWithUserOnline(t *testing.T) {
+	var got map[string]any
+	json.Unmarshal(withUserOnline([]byte(`{"levels":{"0":{"statsUserUplink":true},"1":{}},"system":{"statsInboundUplink":true}}`)), &got)
+	levels := got["levels"].(map[string]any)
+	for _, l := range []string{"0", "1"} {
+		if levels[l].(map[string]any)["statsUserOnline"] != true {
+			t.Errorf("level %s lacks statsUserOnline: %v", l, got)
+		}
+	}
+	if levels["0"].(map[string]any)["statsUserUplink"] != true || got["system"] == nil {
+		t.Errorf("other policy settings were lost: %v", got)
+	}
+	json.Unmarshal(withUserOnline([]byte(`{}`)), &got)
+	if got["levels"].(map[string]any)["0"].(map[string]any)["statsUserOnline"] != true {
+		t.Errorf("an empty policy gets no level 0: %v", got)
+	}
+}

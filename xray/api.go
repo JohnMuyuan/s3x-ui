@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"time"
 	"math"
+	"regexp"
+	"strings"
+	"time"
 
 	"x-ui/logger"
 	"x-ui/util/common"
@@ -174,6 +175,42 @@ func (x *XrayAPI) RemoveUser(inboundTag, email string) error {
 	}
 
 	return nil
+}
+
+// GetUserOnlineIPs lists the addresses a user is connected from; it needs
+// statsUserOnline in the user's policy level.
+func (x *XrayAPI) GetUserOnlineIPs(email string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := (*x.StatsServiceClient).GetStatsOnlineIpList(ctx, &statsService.GetStatsRequest{Name: "user>>>" + email + ">>>online"})
+	if err != nil {
+		return nil, err
+	}
+	ips := make([]string, 0, len(resp.Ips))
+	for ip := range resp.Ips {
+		ips = append(ips, ip)
+	}
+	return ips, nil
+}
+
+// GetOnlineUsers lists the emails of users with an open connection.
+func (x *XrayAPI) GetOnlineUsers() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := (*x.StatsServiceClient).GetAllOnlineUsers(ctx, &statsService.GetAllOnlineUsersRequest{})
+	if err != nil {
+		return nil, err
+	}
+	emails := make([]string, 0, len(resp.Users))
+	for _, name := range resp.Users {
+		// user>>>email>>>online
+		if parts := strings.Split(name, ">>>"); len(parts) == 3 {
+			emails = append(emails, parts[1])
+		}
+	}
+	return emails, nil
 }
 
 func (x *XrayAPI) GetTraffic(reset bool) ([]*Traffic, []*ClientTraffic, error) {
