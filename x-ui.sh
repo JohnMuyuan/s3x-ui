@@ -1387,7 +1387,7 @@ actionunban = <iptables> -D f2b-<name> -s <ip> -j <blocktype>
 
 [Init]
 name = default
-protocol = tcp
+protocol = all
 chain = INPUT
 EOF
 

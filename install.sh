@@ -190,6 +190,13 @@ install_x-ui() {
     chmod +x /usr/bin/x-ui
     config_after_install
 
+    # IP limits must also ban UDP protocols such as Hysteria2 and TUIC;
+    # jails set up by 3x-ui banned TCP only.
+    if [[ -f /etc/fail2ban/action.d/3x-ipl.conf ]] && grep -q '^protocol = tcp$' /etc/fail2ban/action.d/3x-ipl.conf; then
+        sed -i 's/^protocol = tcp$/protocol = all/' /etc/fail2ban/action.d/3x-ipl.conf
+        systemctl restart fail2ban
+    fi
+
     systemctl daemon-reload
     systemctl enable x-ui
     systemctl start x-ui

@@ -25,9 +25,10 @@ type Stat struct {
 }
 
 type Session struct {
-	Inbound string `json:"inbound"`
-	User    string `json:"user"`
-	Source  string `json:"source"`
+	Inbound   string `json:"inbound"`
+	User      string `json:"user"`
+	Source    string `json:"source"`
+	CreatedAt int64  `json:"createdAt"`
 }
 
 func NewAPI(addr, token string) *API {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net/netip"
 	"os"
 	"os/exec"
 	"regexp"
@@ -15,6 +16,8 @@ import (
 	"x-ui/database"
 	"x-ui/database/model"
 	"x-ui/logger"
+	"x-ui/singbox"
+	"x-ui/web/service"
 	"x-ui/xray"
 )
 
@@ -41,12 +44,20 @@ func (j *CheckClientIpJob) Run() {
 	isAccessLogAvailable := j.checkAccessLogAvailable(iplimitActive)
 
 	if iplimitActive {
-		if f2bInstalled && isAccessLogAvailable {
-			shouldClearAccessLog = j.processLogFile()
-		} else {
-			if !f2bInstalled {
-				logger.Warning("[LimitIP] Fail2Ban is not installed, Please install Fail2Ban from the x-ui bash menu.")
+		if f2bInstalled {
+			clientIps := map[string][]string{}
+			if isAccessLogAvailable {
+				clientIps = j.processLogFile()
 			}
+			// sing-box inbounds have no access log; their live sessions say the same.
+			if sessions, err := (&service.SingboxService{}).GetSessions(); err == nil {
+				for email, ips := range singboxClientIps(sessions) {
+					clientIps[email] = ips
+				}
+			}
+			shouldClearAccessLog = j.applyLimits(clientIps) && isAccessLogAvailable
+		} else {
+			logger.Warning("[LimitIP] Fail2Ban is not installed, Please install Fail2Ban from the x-ui bash menu.")
 		}
 	}
 
@@ -105,7 +116,8 @@ func (j *CheckClientIpJob) hasLimitIp() bool {
 	return false
 }
 
-func (j *CheckClientIpJob) processLogFile() bool {
+// processLogFile returns each client's source IPs seen in Xray's access log.
+func (j *CheckClientIpJob) processLogFile() map[string][]string {
 
 	ipRegex := regexp.MustCompile(`from (?:tcp:|udp:)?\[?([0-9a-fA-F\.:]+)\]?:\d+ accepted`)
 	emailRegex := regexp.MustCompile(`email: (.+)$`)
@@ -143,15 +155,68 @@ func (j *CheckClientIpJob) processLogFile() bool {
 		inboundClientIps[email][ip] = struct{}{}
 	}
 
-	shouldCleanLog := false
+	clientIps := make(map[string][]string, len(inboundClientIps))
 	for email, uniqueIps := range inboundClientIps {
-
 		ips := make([]string, 0, len(uniqueIps))
 		for ip := range uniqueIps {
 			ips = append(ips, ip)
 		}
 		sort.Strings(ips)
+		clientIps[email] = ips
+	}
+	return clientIps
+}
 
+// singboxClientIps returns each client's source IPs among sbcore's live
+// sessions, earliest connected first, so a client over its limit keeps the
+// devices it already had and the newcomers are the ones banned.
+func singboxClientIps(sessions []singbox.Session) map[string][]string {
+	firstSeen := map[string]map[netip.Addr]int64{}
+	for _, s := range sessions {
+		if s.User == "" {
+			continue
+		}
+		src, err := netip.ParseAddrPort(s.Source)
+		if err != nil {
+			continue
+		}
+		ip := src.Addr().Unmap()
+		if ip.IsLoopback() {
+			continue
+		}
+		if firstSeen[s.User] == nil {
+			firstSeen[s.User] = map[netip.Addr]int64{}
+		}
+		if t, ok := firstSeen[s.User][ip]; !ok || s.CreatedAt < t {
+			firstSeen[s.User][ip] = s.CreatedAt
+		}
+	}
+	clientIps := make(map[string][]string, len(firstSeen))
+	for email, seen := range firstSeen {
+		ips := make([]netip.Addr, 0, len(seen))
+		for ip := range seen {
+			ips = append(ips, ip)
+		}
+		sort.Slice(ips, func(a, b int) bool {
+			if seen[ips[a]] != seen[ips[b]] {
+				return seen[ips[a]] < seen[ips[b]]
+			}
+			return ips[a].Less(ips[b])
+		})
+		out := make([]string, len(ips))
+		for i, ip := range ips {
+			out[i] = ip.String()
+		}
+		clientIps[email] = out
+	}
+	return clientIps
+}
+
+// applyLimits records each client's IPs and logs those beyond its limit for
+// Fail2Ban. It reports whether any of these clients has a limit.
+func (j *CheckClientIpJob) applyLimits(clientIps map[string][]string) bool {
+	shouldCleanLog := false
+	for email, ips := range clientIps {
 		clientIpsRecord, err := j.getInboundClientIps(email)
 		if err != nil {
 			j.addInboundClientIps(email, ips)
