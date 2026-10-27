@@ -33,6 +33,8 @@ const (
 
 	// Served by mtg-multi processes.
 	MTProto Protocol = "mtproto"
+	// Served by amneziawg-go devices inside the panel.
+	AmneziaWG Protocol = "amneziawg"
 )
 
 // SingboxTagPrefix marks inbounds that live in a sidecar (sbcore or mtg), so
@@ -53,9 +55,10 @@ func (p Protocol) KeysClientsByEmail() bool {
 	return p == Shadowsocks || p == MASQUE || p.IsSidecar()
 }
 
-// IsSidecar reports protocols Xray does not run: sbcore's and MTProto.
+// IsSidecar reports protocols Xray does not run: sbcore's, MTProto and
+// AmneziaWG.
 func (p Protocol) IsSidecar() bool {
-	return p.IsSingbox() || p == MTProto
+	return p.IsSingbox() || p == MTProto || p == AmneziaWG
 }
 
 func IsSingboxTag(tag string) bool {

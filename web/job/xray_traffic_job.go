@@ -16,6 +16,7 @@ type XrayTrafficJob struct {
 	outboundService service.OutboundService
 	singboxService  service.SingboxService
 	mtprotoService  service.MtprotoService
+	awgService      service.AmneziaWGService
 }
 
 func NewXrayTrafficJob() *XrayTrafficJob {
@@ -36,10 +37,12 @@ func (j *XrayTrafficJob) Run() {
 		clientTraffics = append(clientTraffics, c...)
 		collected = true
 	}
-	if t, c := j.mtprotoService.GetTraffic(); len(t) > 0 {
-		traffics = append(traffics, t...)
-		clientTraffics = append(clientTraffics, c...)
-		collected = true
+	for _, sidecar := range []func() ([]*xray.Traffic, []*xray.ClientTraffic){j.mtprotoService.GetTraffic, j.awgService.GetTraffic} {
+		if t, c := sidecar(); len(t) > 0 {
+			traffics = append(traffics, t...)
+			clientTraffics = append(clientTraffics, c...)
+			collected = true
+		}
 	}
 	// Also catches clients disabled by quota or expiry since the last run.
 	service.RequestSingboxApply()

@@ -26,6 +26,10 @@
                 Vue.prototype.$message.error('{{ i18n "pages.inbounds.xdriveNeedsEncryption" }}');
                 return;
             }
+            if (inModal.inbound.protocol === Protocols.AMNEZIAWG && inModal.inbound.settings.paramsError) {
+                Vue.prototype.$message.error('AmneziaWG: ' + inModal.inbound.settings.paramsError);
+                return;
+            }
             if (inModal.inbound.protocol === Protocols.MTPROTO &&
                 !inModal.inbound.settings.clients.every(c => Inbound.MtprotoSettings.validKey(c.password))) {
                 Vue.prototype.$message.error('{{ i18n "pages.inbounds.mtprotoKeyInvalid" }}');

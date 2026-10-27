@@ -17,7 +17,11 @@ const Protocols = {
     SHADOWTLS: 'shadowtls',
     SNELL: 'snell',
     MTPROTO: 'mtproto',
+    AMNEZIAWG: 'amneziawg',
 };
+
+// Served beside Xray and sbcore: mtg for MTProto, amneziawg-go for AmneziaWG.
+const OTHER_PROTOCOLS = [Protocols.MTPROTO, Protocols.AMNEZIAWG];
 
 // Served by the sbcore sing-box sidecar rather than Xray.
 const SINGBOX_PROTOCOLS = [Protocols.ANYTLS, Protocols.HYSTERIA2, Protocols.TUIC, Protocols.HYSTERIA,
@@ -31,7 +35,7 @@ function isSingboxProtocol(protocol) {
 
 // Clients made of an email and a password, told apart by email.
 function keysClientsByEmail(protocol) {
-    return isSingboxProtocol(protocol) || protocol === Protocols.MASQUE || protocol === Protocols.MTPROTO;
+    return isSingboxProtocol(protocol) || protocol === Protocols.MASQUE || OTHER_PROTOCOLS.includes(protocol);
 }
 
 // A fresh password for such a client; an MTProto client's is its 16-byte key.
@@ -1802,6 +1806,8 @@ class Inbound extends XrayCommonClass {
                 return this.genVLESSLink(address, port, forceTls, remark, client.id, client.flow);
             case Protocols.MTPROTO:
                 return this.genMtprotoLink(address, port, client);
+            case Protocols.AMNEZIAWG:
+                return this.genAmneziaWGLink(address, port, remark, client);
             case Protocols.SHADOWSOCKS:
                 return this.genSSLink(address, port, forceTls, remark, this.isSSMultiUser ? client.password : '');
             case Protocols.TROJAN:
@@ -1809,6 +1815,46 @@ class Inbound extends XrayCommonClass {
             default:
                 return this.isSingbox ? this.genSingboxLink(address, port, remark, client) : '';
         }
+    }
+
+    // AmneziaWG has no URI scheme; Sub-Store takes this one-line mihomo node.
+    genAmneziaWGLink(address, port, remark, client) {
+        const s = this.settings;
+        const node = {
+            name: remark, type: 'wireguard', server: address, port,
+            ip: client.address.split('/')[0],
+            'private-key': client.privateKey, 'public-key': s.pubKey,
+        };
+        if (client.preSharedKey) node['pre-shared-key'] = client.preSharedKey;
+        Object.assign(node, {
+            'allowed-ips': ['0.0.0.0/0'], mtu: s.mtu, udp: true,
+            'amnezia-wg-option': s.params,
+        });
+        if (s.dns) node.dns = [s.dns];
+        return JSON.stringify(node);
+    }
+
+    // The client config file AmneziaVPN and the AmneziaWG apps import.
+    genAmneziaWGConf(address, port, client) {
+        const s = this.settings;
+        const p = s.params;
+        const host = address.includes(':') && !address.startsWith('[') ? `[${address}]` : address;
+        return [
+            '[Interface]',
+            `PrivateKey = ${client.privateKey}`,
+            `Address = ${client.address}`,
+            s.dns ? `DNS = ${s.dns}` : '',
+            `MTU = ${s.mtu}`,
+            `Jc = ${p.jc}`, `Jmin = ${p.jmin}`, `Jmax = ${p.jmax}`, `S1 = ${p.s1}`, `S2 = ${p.s2}`,
+            `H1 = ${p.h1}`, `H2 = ${p.h2}`, `H3 = ${p.h3}`, `H4 = ${p.h4}`,
+            '',
+            '[Peer]',
+            `PublicKey = ${s.pubKey}`,
+            client.preSharedKey ? `PresharedKey = ${client.preSharedKey}` : '',
+            'AllowedIPs = 0.0.0.0/0',
+            `Endpoint = ${host}:${port}`,
+            'PersistentKeepalive = 25',
+        ].filter((line, i, all) => line !== '' || all[i + 1] === '[Peer]').join('\n') + '\n';
     }
 
     // Telegram's proxy link. It has no name field, so no remark is added.
@@ -1999,6 +2045,7 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.MASQUE: return new Inbound.MasqueSettings(protocol);
             case Protocols.TUN: return new Inbound.TunSettings(protocol);
             case Protocols.MTPROTO: return new Inbound.MtprotoSettings(protocol);
+            case Protocols.AMNEZIAWG: return new Inbound.AmneziaWGSettings(protocol);
             default: return isSingboxProtocol(protocol) ? new Inbound.SingboxSettings(protocol) : null;
         }
     }
@@ -2016,6 +2063,7 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.MASQUE: return Inbound.MasqueSettings.fromJson(protocol, json);
             case Protocols.TUN: return Inbound.TunSettings.fromJson(protocol, json);
             case Protocols.MTPROTO: return Inbound.MtprotoSettings.fromJson(protocol, json);
+            case Protocols.AMNEZIAWG: return Inbound.AmneziaWGSettings.fromJson(protocol, json);
             default: return isSingboxProtocol(protocol) ? Inbound.SingboxSettings.fromJson(protocol, json) : null;
         }
     }
@@ -3112,5 +3160,117 @@ Inbound.SingboxSettings.Client = class extends XrayCommonClass {
 
     set _totalGB(gb) {
         this.totalGB = NumberFormatter.toFixed(gb * SizeFormatter.ONE_GB, 0);
+    }
+};
+
+// AmneziaWG runs in the panel on its own interface. Each client is a peer
+// with a /32 from the server's subnet; the obfuscation parameters (junk
+// packets, handshake padding, message types) must match on every client.
+Inbound.AmneziaWGSettings = class extends Inbound.Settings {
+    constructor(protocol, clients, secretKey = Wireguard.generateKeypair().privateKey, address = '10.66.66.1/24',
+        mtu = 1420, dns = '1.1.1.1', params = Inbound.AmneziaWGSettings.randomParams()) {
+        super(protocol);
+        this.secretKey = secretKey;
+        this.address = address;
+        this.mtu = mtu;
+        this.dns = dns;
+        this.params = params;
+        this.clients = clients || [];
+        if (!clients) this.clients.push(this.newClient());
+    }
+
+    static randomParams() {
+        const r = (min, max) => RandomUtil.randomInteger(min, max);
+        const jmin = r(40, 80);
+        const s1 = r(15, 150);
+        let s2 = r(15, 150);
+        if (s1 + 56 === s2) s2++;
+        const h = new Set();
+        while (h.size < 4) h.add(r(5, 2147483647));
+        const [h1, h2, h3, h4] = [...h];
+        return { jc: r(3, 10), jmin, jmax: jmin + r(20, 200), s1, s2, h1, h2, h3, h4 };
+    }
+
+    // The reason Xray-free AmneziaWG would refuse these parameters, or ''.
+    get paramsError() {
+        const p = this.params;
+        const h = [p.h1, p.h2, p.h3, p.h4];
+        if (!(p.jc >= 0 && p.jc <= 128)) return 'Jc: 0-128';
+        if (!(p.jmin >= 0 && p.jmin <= p.jmax && p.jmax <= 1280)) return '0 <= Jmin <= Jmax <= 1280';
+        if (!(p.s1 >= 0 && p.s1 <= 1132 && p.s2 >= 0 && p.s2 <= 1188)) return 'S1: 0-1132, S2: 0-1188';
+        if (p.s1 + 56 === p.s2) return 'S2 ≠ S1 + 56';
+        if (h.some(v => !(v > 4)) || new Set(h).size < 4) return 'H1-H4: distinct, above 4';
+        return '';
+    }
+
+    get pubKey() {
+        return this.secretKey ? Wireguard.generateKeypair(this.secretKey).publicKey : '';
+    }
+
+    // A client with fresh keys and the first free address, also skipping
+    // the addresses of clients not yet saved.
+    newClient(pending = []) {
+        const client = new Inbound.AmneziaWGSettings.Client(this.protocol);
+        client.address = this.nextAddress([...this.clients, ...pending]);
+        return client;
+    }
+
+    nextAddress(clients) {
+        const [ip, bits] = this.address.split('/');
+        const toInt = a => a.split('.').reduce((n, o) => n * 256 + Number(o), 0);
+        const base = toInt(ip) - toInt(ip) % 2 ** (32 - Number(bits || 24));
+        const taken = new Set([toInt(ip), ...clients.map(c => toInt((c.address || '').split('/')[0] || '0.0.0.0'))]);
+        for (let n = base + 2; n < base + 2 ** (32 - Number(bits || 24)) - 1; n++) {
+            if (!taken.has(n)) return [24, 16, 8, 0].map(s => (n >>> s) & 255).join('.') + '/32';
+        }
+        return '';
+    }
+
+    static fromJson(protocol, json = {}) {
+        const p = {};
+        for (const k of ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']) p[k] = json[k];
+        return new Inbound.AmneziaWGSettings(
+            protocol,
+            (json.clients || []).map(c => Inbound.AmneziaWGSettings.Client.fromJson(protocol, c)),
+            json.secretKey, json.address, json.mtu, json.dns, p,
+        );
+    }
+
+    toJson() {
+        return {
+            clients: Inbound.AmneziaWGSettings.toJsonArray(this.clients),
+            secretKey: this.secretKey,
+            address: this.address,
+            mtu: this.mtu,
+            dns: this.dns,
+            ...this.params,
+        };
+    }
+};
+
+Inbound.AmneziaWGSettings.Client = class extends Inbound.SingboxSettings.Client {
+    constructor(protocol, email, privateKey, preSharedKey = '', address = '', limitIp, totalGB, expiryTime, enable, tgId, subId, comment, reset) {
+        super(protocol, email, '', '', limitIp, totalGB, expiryTime, enable, tgId, subId, comment, reset);
+        this.privateKey = privateKey || Wireguard.generateKeypair().privateKey;
+        this.preSharedKey = preSharedKey;
+        this.address = address;
+    }
+
+    get publicKey() {
+        return Wireguard.generateKeypair(this.privateKey).publicKey;
+    }
+
+    static fromJson(protocol, json = {}) {
+        return new Inbound.AmneziaWGSettings.Client(protocol, json.email, json.privateKey, json.preSharedKey, json.address,
+            json.limitIp, json.totalGB, json.expiryTime, json.enable, json.tgId, json.subId, json.comment, json.reset);
+    }
+
+    toJson() {
+        const json = super.toJson();
+        delete json.password;
+        return Object.assign(json, {
+            privateKey: this.privateKey, publicKey: this.publicKey,
+            preSharedKey: this.preSharedKey, address: this.address,
+        });
     }
 };

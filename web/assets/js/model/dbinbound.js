@@ -137,6 +137,7 @@ class DBInbound {
             case Protocols.TROJAN:
             case Protocols.SHADOWSOCKS:
             case Protocols.MTPROTO:
+            case Protocols.AMNEZIAWG:
                 return true;
             default:
                 return isSingboxProtocol(this.protocol);

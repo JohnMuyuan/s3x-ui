@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"x-ui/amneziawg"
 	"x-ui/config"
 	"x-ui/logger"
 	"x-ui/mtproto"
@@ -408,6 +409,7 @@ func (s *Server) Stop() error {
 		logger.Warning("stop sbcore failed:", err)
 	}
 	mtproto.GetManager().StopAll()
+	amneziawg.GetManager().StopAll()
 	if s.cron != nil {
 		s.cron.Stop()
 	}

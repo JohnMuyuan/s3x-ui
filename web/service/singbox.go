@@ -35,7 +35,7 @@ type SingboxService struct {
 	settingService SettingService
 }
 
-// RequestSingboxApply schedules a reconcile of sbcore and mtg with the database. It
+// RequestSingboxApply schedules a reconcile of the sidecars with the database. It
 // never blocks, so callers inside a DB transaction can use it safely.
 func RequestSingboxApply() {
 	select {
@@ -60,6 +60,9 @@ func StartSingboxApplier(ctx context.Context) {
 			}
 			if err := new(MtprotoService).Apply(); err != nil {
 				logger.Warning("mtproto apply failed:", err)
+			}
+			if err := new(AmneziaWGService).Apply(); err != nil {
+				logger.Warning("amneziawg apply failed:", err)
 			}
 		}
 	}()

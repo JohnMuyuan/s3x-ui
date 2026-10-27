@@ -296,6 +296,21 @@
           <code>[[ link.link ]]</code>
         </tr-info-row>
       </template>
+      <template v-if="infoModal.awgConf">
+        <a-divider>{{ i18n "pages.inbounds.awgConfig" }}</a-divider>
+        <tr-info-row class="tr-info-row">
+          <tr-info-title class="tr-info-title">
+            <a-tag class="tr-info-tag" color="green">[[ infoModal.clientSettings.email ]].conf</a-tag>
+            <a-tooltip title='{{ i18n "copy" }}'>
+              <a-button :style="{ minWidth: '24px' }" size="small" icon="snippets" @click="copy(infoModal.awgConf)"></a-button>
+            </a-tooltip>
+            <a-tooltip title='{{ i18n "download" }}'>
+              <a-button :style="{ minWidth: '24px' }" size="small" icon="download" @click="FileManager.downloadTextFile(infoModal.awgConf, `${infoModal.clientSettings.email}.conf`)"></a-button>
+            </a-tooltip>
+          </tr-info-title>
+          <pre :style="{ borderRadius: '1rem', padding: '0.5rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }" class="client-table-odd-row">[[ infoModal.awgConf ]]</pre>
+        </tr-info-row>
+      </template>
     </template>
     <template v-else>
       <template v-if="dbInbound.isSS && !inbound.isSSMultiUser">
@@ -468,6 +483,7 @@
     upStats: 0,
     downStats: 0,
     links: [],
+    awgConf: '',
     index: null,
     isExpired: false,
     subLink: '',
@@ -494,6 +510,11 @@
             this.clientIps = ips;
           })
         }
+      }
+      this.awgConf = '';
+      if (this.inbound.protocol === Protocols.AMNEZIAWG && this.clientSettings) {
+        const addr = !ObjectUtil.isEmpty(this.inbound.listen) && this.inbound.listen !== '0.0.0.0' ? this.inbound.listen : location.hostname;
+        this.awgConf = this.inbound.genAmneziaWGConf(addr, this.inbound.port, this.clientSettings);
       }
       if (this.inbound.protocol == Protocols.WIREGUARD) {
         this.links = this.inbound.genInboundLinks(dbInbound.remark).split('\r\n')

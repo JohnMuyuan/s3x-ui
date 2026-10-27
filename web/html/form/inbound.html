@@ -12,13 +12,13 @@
         <a-select v-model="inbound.protocol" :disabled="isEdit" :dropdown-class-name="themeSwitcher.currentTheme"
             :dropdown-menu-style="{ maxHeight: '600px' }" @change="protocolChange">
             <a-select-opt-group label="Xray">
-                <a-select-option v-for="p in Object.values(Protocols).filter(p => !isSingboxProtocol(p) && p !== Protocols.MTPROTO)" :key="p" :value="p">[[ p ]]</a-select-option>
+                <a-select-option v-for="p in Object.values(Protocols).filter(p => !isSingboxProtocol(p) && !OTHER_PROTOCOLS.includes(p))" :key="p" :value="p">[[ p ]]</a-select-option>
             </a-select-opt-group>
             <a-select-opt-group label="sing-box">
                 <a-select-option v-for="p in SINGBOX_PROTOCOLS" :key="p" :value="p">[[ p ]]</a-select-option>
             </a-select-opt-group>
-            <a-select-opt-group label="Telegram">
-                <a-select-option :value="Protocols.MTPROTO">mtproto</a-select-option>
+            <a-select-opt-group label="mtg / amneziawg-go">
+                <a-select-option v-for="p in OTHER_PROTOCOLS" :key="p" :value="p">[[ p ]]</a-select-option>
             </a-select-opt-group>
         </a-select>
     </a-form-item>
@@ -127,6 +127,11 @@
     {{template "form/mtproto"}}
 </template>
 
+<!-- amneziawg, served inside the panel -->
+<template v-if="inbound.protocol === Protocols.AMNEZIAWG">
+    {{template "form/amneziawg"}}
+</template>
+
 <!-- sing-box protocols, served by sbcore -->
 <template v-if="inbound.isSingbox">
     {{template "form/singbox"}}
@@ -144,7 +149,7 @@
 </template>
 
 <!-- sniffing -->
-<a-collapse v-if="!inbound.isSingbox && inbound.protocol !== Protocols.MTPROTO">
+<a-collapse v-if="!inbound.isSingbox && !OTHER_PROTOCOLS.includes(inbound.protocol)">
     <a-collapse-panel header='Sniffing'>
         {{template "form/sniffing"}}
     </a-collapse-panel>
