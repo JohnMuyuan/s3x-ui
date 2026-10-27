@@ -28,6 +28,7 @@ var defaultValueMap = map[string]string{
 	"sbcoreEgress":                "xray",
 	"webListen":                   "",
 	"webDomain":                   "",
+	"trustedProxyCIDRs":           DefaultTrustedProxyCIDRs,
 	"webPort":                     "2053",
 	"webCertFile":                 "",
 	"webKeyFile":                  "",

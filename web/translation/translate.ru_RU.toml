@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "Оставьте пустым для подключения с любого IP"
 "panelListeningDomain" = "Домен панели"
 "panelListeningDomainDesc" = "По умолчанию оставьте пустым, чтобы подключаться с любых доменов и IP-адресов"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "Порт панели"
 "panelPortDesc" = "Порт, на котором работает панель"
 "publicKeyPath" = "Путь к файлу публичного ключа сертификата панели"

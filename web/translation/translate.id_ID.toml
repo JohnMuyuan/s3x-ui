@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "Alamat IP untuk panel web. (biarkan kosong untuk mendengarkan semua IP)"
 "panelListeningDomain" = "Domain Pendengar"
 "panelListeningDomainDesc" = "Nama domain untuk panel web. (biarkan kosong untuk mendengarkan semua domain dan IP)"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "Port Pendengar"
 "panelPortDesc" = "Nomor port untuk panel web. (harus menjadi port yang tidak digunakan)"
 "publicKeyPath" = "Path Kunci Publik"

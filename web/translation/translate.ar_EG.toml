@@ -330,6 +330,8 @@
 "panelListeningIPDesc" = "عنوان IP للبانل. (سيبه فاضي عشان يستمع على كل الـ IPs)"
 "panelListeningDomain" = "دومين الاستماع"
 "panelListeningDomainDesc" = "اسم الدومين للبانل. (سيبه فاضي عشان يستمع على كل الدومينات والـ IPs)"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "بورت الاستماع"
 "panelPortDesc" = "رقم البورت للبانل. (لازم يكون بورت فاضي)"
 "publicKeyPath" = "مسار المفتاح العام"

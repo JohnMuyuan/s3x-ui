@@ -3,28 +3,20 @@ package controller
 import (
 	"net"
 	"net/http"
-	"strings"
 
 	"x-ui/config"
 	"x-ui/logger"
 	"x-ui/web/entity"
+	"x-ui/web/service"
 
 	"github.com/gin-gonic/gin"
 )
 
+// getRemoteIp is the client's address; forwarding headers count only from a
+// trusted proxy (trustedProxyCIDRs).
 func getRemoteIp(c *gin.Context) string {
-	value := c.GetHeader("X-Real-IP")
-	if value != "" {
-		return value
-	}
-	value = c.GetHeader("X-Forwarded-For")
-	if value != "" {
-		ips := strings.Split(value, ",")
-		return ips[0]
-	}
-	addr := c.Request.RemoteAddr
-	ip, _, _ := net.SplitHostPort(addr)
-	return ip
+	var settings service.SettingService
+	return settings.ClientIP(c.Request.RemoteAddr, c.GetHeader("X-Real-IP"), c.GetHeader("X-Forwarded-For"))
 }
 
 func jsonMsg(c *gin.Context, msg string, err error) {
@@ -64,9 +56,13 @@ func html(c *gin.Context, name string, title string, data gin.H) {
 		data = gin.H{}
 	}
 	data["title"] = title
-	host := c.GetHeader("X-Forwarded-Host")
-	if host == "" {
-		host = c.GetHeader("X-Real-IP")
+	host := ""
+	var settings service.SettingService
+	if settings.ViaTrustedProxy(c.Request.RemoteAddr) {
+		host = c.GetHeader("X-Forwarded-Host")
+		if host == "" {
+			host = c.GetHeader("X-Real-IP")
+		}
 	}
 	if host == "" {
 		var err error

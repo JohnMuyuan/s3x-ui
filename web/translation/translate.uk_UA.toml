@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "IP-адреса для веб-панелі. (залиште порожнім, щоб слухати всі IP-адреси)"
 "panelListeningDomain" = "Домен прослуховування"
 "panelListeningDomainDesc" = "Доменне ім'я для веб-панелі. (залиште порожнім, щоб слухати всі домени та IP-адреси)"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "Порт прослуховування"
 "panelPortDesc" = "Номер порту для веб-панелі. (має бути невикористаний порт)"
 "publicKeyPath" = "Шлях відкритого ключа"

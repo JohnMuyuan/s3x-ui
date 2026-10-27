@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "デフォルトではすべてのIPを監視する"
 "panelListeningDomain" = "パネル監視ドメイン"
 "panelListeningDomainDesc" = "デフォルトで空白の場合、すべてのドメインとIPアドレスを監視する"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "パネル監視ポート"
 "panelPortDesc" = "再起動で有効"
 "publicKeyPath" = "パネル証明書公開鍵ファイルパス"

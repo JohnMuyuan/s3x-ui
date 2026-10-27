@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "آدرس آی‌پی برای وب پنل. برای گوش‌دادن به‌تمام آی‌پی‌ها خالی‌بگذارید"
 "panelListeningDomain" = "نام دامنه"
 "panelListeningDomainDesc" = "آدرس دامنه برای وب پنل. برای گوش دادن به‌تمام دامنه‌ها و آی‌پی‌ها خالی‌بگذارید"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "پورت"
 "panelPortDesc" = "شماره پورت برای وب پنل. باید پورت استفاده نشده‌باشد"
 "publicKeyPath" = "مسیر کلید عمومی"

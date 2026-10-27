@@ -36,6 +36,13 @@
             </template>
         </a-setting-list-item>
         <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.trustedProxies"}}</template>
+            <template #description>{{ i18n "pages.settings.trustedProxiesDesc"}}</template>
+            <template #control>
+                <a-input type="text" v-model.trim="allSetting.trustedProxyCIDRs" placeholder="127.0.0.1/32,::1/128"></a-input>
+            </template>
+        </a-setting-list-item>
+        <a-setting-list-item paddings="small">
             <template #title>{{ i18n "pages.settings.panelPort"}}</template>
             <template #description>{{ i18n "pages.settings.panelPortDesc"}}</template>
             <template #control>

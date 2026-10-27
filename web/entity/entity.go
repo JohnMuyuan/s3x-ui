@@ -22,6 +22,7 @@ type Msg struct {
 type AllSetting struct {
 	WebListen                   string `json:"webListen" form:"webListen"`
 	WebDomain                   string `json:"webDomain" form:"webDomain"`
+	TrustedProxyCIDRs           string `json:"trustedProxyCIDRs" form:"trustedProxyCIDRs"`
 	WebPort                     int    `json:"webPort" form:"webPort"`
 	WebCertFile                 string `json:"webCertFile" form:"webCertFile"`
 	WebKeyFile                  string `json:"webKeyFile" form:"webKeyFile"`
@@ -100,6 +101,18 @@ func (s *AllSetting) CheckValid() error {
 
 	if (s.SubPort == s.WebPort) && (s.WebListen == s.SubListen) {
 		return common.NewError("Sub and Web could not use same ip:port, ", s.SubListen, ":", s.SubPort, " & ", s.WebListen, ":", s.WebPort)
+	}
+
+	for _, entry := range strings.Split(s.TrustedProxyCIDRs, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		if _, err := netip.ParsePrefix(entry); err != nil {
+			if _, err := netip.ParseAddr(entry); err != nil {
+				return common.NewError("trusted proxy is not an IP or CIDR: ", entry)
+			}
+		}
 	}
 
 	if s.WebCertFile != "" || s.WebKeyFile != "" {

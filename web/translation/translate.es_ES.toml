@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "Dejar en blanco por defecto para monitorear todas las IPs."
 "panelListeningDomain" = "Dominio de Escucha del Panel"
 "panelListeningDomainDesc" = "Dejar en blanco por defecto para monitorear todos los dominios e IPs."
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "Puerto del Panel"
 "panelPortDesc" = "El puerto utilizado para mostrar este panel."
 "publicKeyPath" = "Ruta del Archivo de Clave Pública del Certificado del Panel"

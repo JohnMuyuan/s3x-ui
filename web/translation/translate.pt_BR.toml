@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "O endereço IP para o painel web. (deixe em branco para escutar em todos os IPs)"
 "panelListeningDomain" = "Domínio de Escuta"
 "panelListeningDomainDesc" = "O nome de domínio para o painel web. (deixe em branco para escutar em todos os domínios e IPs)"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "Porta de Escuta"
 "panelPortDesc" = "O número da porta para o painel web. (deve ser uma porta não usada)"
 "publicKeyPath" = "Caminho da Chave Pública"

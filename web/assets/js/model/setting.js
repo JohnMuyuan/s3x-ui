@@ -3,6 +3,7 @@ class AllSetting {
     constructor(data) {
         this.webListen = "";
         this.webDomain = "";
+        this.trustedProxyCIDRs = "127.0.0.1/32,::1/128";
         this.webPort = 2053;
         this.webCertFile = "";
         this.webKeyFile = "";

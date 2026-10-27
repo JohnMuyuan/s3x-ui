@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "默认留空监听所有 IP"
 "panelListeningDomain" = "面板监听域名"
 "panelListeningDomainDesc" = "默认情况下留空以监视所有域名和 IP 地址"
+"trustedProxies" = "可信反向代理"
+"trustedProxiesDesc" = "面板或订阅放在 Nginx、Caddy 等反向代理后面时，填写代理的 IP 或 CIDR（逗号分隔）。只有来自这些地址的 X-Forwarded-For、X-Real-IP 和 X-Forwarded-Host 才会被采信，用于登录日志、通知里的访客 IP 和订阅链接的域名。默认信任本机。"
 "panelPort" = "面板监听端口"
 "panelPortDesc" = "重启面板生效"
 "publicKeyPath" = "面板证书公钥文件路径"

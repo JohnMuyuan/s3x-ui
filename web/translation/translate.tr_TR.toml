@@ -332,6 +332,8 @@
 "panelListeningIPDesc" = "Web paneli için IP adresi. (tüm IP'leri dinlemek için boş bırakın)"
 "panelListeningDomain" = "Dinleme Alan Adı"
 "panelListeningDomainDesc" = "Web paneli için alan adı. (tüm alan adlarını ve IP'leri dinlemek için boş bırakın)"
+"trustedProxies" = "Trusted Proxies"
+"trustedProxiesDesc" = "When the panel or subscriptions sit behind a reverse proxy such as Nginx or Caddy, list the proxy IPs or CIDRs, comma separated. X-Forwarded-For, X-Real-IP and X-Forwarded-Host are believed only from these addresses: they give the visitor IP in login logs and alerts, and the host in subscription links. The default trusts this machine."
 "panelPort" = "Dinleme Portu"
 "panelPortDesc" = "Web paneli için port numarası. (kullanılmayan bir port olmalıdır)"
 "publicKeyPath" = "Genel Anahtar Yolu"

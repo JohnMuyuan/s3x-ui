@@ -5,6 +5,8 @@ import (
 	"net"
 	"strings"
 
+	"x-ui/web/service"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +19,7 @@ type SUBController struct {
 
 	subService     *SubService
 	subJsonService *SubJsonService
+	settingService service.SettingService
 }
 
 func NewSUBController(
@@ -59,20 +62,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 
 func (a *SUBController) subs(c *gin.Context) {
 	subId := c.Param("subid")
-	var host string
-	if h, err := getHostFromXFH(c.GetHeader("X-Forwarded-Host")); err == nil {
-		host = h
-	}
-	if host == "" {
-		host = c.GetHeader("X-Real-IP")
-	}
-	if host == "" {
-		var err error
-		host, _, err = net.SplitHostPort(c.Request.Host)
-		if err != nil {
-			host = c.Request.Host
-		}
-	}
+	host := a.requestHost(c)
 	subs, header, err := a.subService.GetSubs(subId, host)
 	if err != nil || len(subs) == 0 {
 		c.String(400, "Error!")
@@ -97,20 +87,7 @@ func (a *SUBController) subs(c *gin.Context) {
 
 func (a *SUBController) subJsons(c *gin.Context) {
 	subId := c.Param("subid")
-	var host string
-	if h, err := getHostFromXFH(c.GetHeader("X-Forwarded-Host")); err == nil {
-		host = h
-	}
-	if host == "" {
-		host = c.GetHeader("X-Real-IP")
-	}
-	if host == "" {
-		var err error
-		host, _, err = net.SplitHostPort(c.Request.Host)
-		if err != nil {
-			host = c.Request.Host
-		}
-	}
+	host := a.requestHost(c)
 	jsonSub, header, err := a.subJsonService.GetJson(subId, host)
 	if err != nil || len(jsonSub) == 0 {
 		c.String(400, "Error!")
@@ -123,6 +100,24 @@ func (a *SUBController) subJsons(c *gin.Context) {
 
 		c.String(200, jsonSub)
 	}
+}
+
+// requestHost is the host the client asked for: the forwarded host when a
+// trusted proxy passed the request on, else the Host header.
+func (a *SUBController) requestHost(c *gin.Context) string {
+	if a.settingService.ViaTrustedProxy(c.Request.RemoteAddr) {
+		if h, err := getHostFromXFH(c.GetHeader("X-Forwarded-Host")); err == nil && h != "" {
+			return h
+		}
+		if h := c.GetHeader("X-Real-IP"); h != "" {
+			return h
+		}
+	}
+	host, _, err := net.SplitHostPort(c.Request.Host)
+	if err != nil {
+		host = c.Request.Host
+	}
+	return host
 }
 
 func getHostFromXFH(s string) (string, error) {
