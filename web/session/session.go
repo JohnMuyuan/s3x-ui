@@ -11,6 +11,7 @@ import (
 
 const (
 	loginUserKey = "LOGIN_USER"
+	apiUserKey   = "API_USER"
 	defaultPath  = "/"
 )
 
@@ -35,7 +36,16 @@ func SetMaxAge(c *gin.Context, maxAge int) {
 	})
 }
 
+// SetAPIUser logs a request in that presented an API token, for this request
+// only: no session cookie is made.
+func SetAPIUser(c *gin.Context, user *model.User) {
+	c.Set(apiUserKey, user)
+}
+
 func GetLoginUser(c *gin.Context) *model.User {
+	if user, ok := c.Get(apiUserKey); ok {
+		return user.(*model.User)
+	}
 	s := sessions.Default(c)
 	obj := s.Get(loginUserKey)
 	if obj == nil {

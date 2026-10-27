@@ -1,5 +1,8 @@
 {{ template "page/head_start" .}}
 <style>
+  .api-token-value { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .api-token-value code { word-break: break-all; }
+  .api-token-form { flex-wrap: wrap; }
   @media (min-width: 769px) {
     .ant-layout-content {
       margin: 24px 16px;
@@ -177,6 +180,9 @@
       allSetting: new AllSetting(),
       saveBtnDisable: true,
       egressTargets: [],
+      apiTokens: [],
+      apiTokenNew: '',
+      apiTokenForm: { name: '', scope: 'readonly', days: 0 },
       user: {},
       lang: LanguageManager.getLanguage(),
       remarkModels: { i: 'Inbound', e: 'Email', o: 'Other' },
@@ -297,6 +303,25 @@
         const subs = await HttpUtil.post("/panel/xray/outboundSubs");
         if (subs.success) (subs.obj || []).filter(s => s.enable).forEach(s => tags.push(...(s.tags || [])));
         this.egressTargets = tags.filter(tag => tag && tag !== 'blocked' && tag !== 'api');
+      },
+      async getApiTokens() {
+        const msg = await HttpUtil.post("/panel/setting/apiTokens");
+        if (msg.success) this.apiTokens = msg.obj || [];
+      },
+      async addApiToken() {
+        const msg = await HttpUtil.post("/panel/setting/apiToken/add", this.apiTokenForm);
+        if (!msg.success) return;
+        this.apiTokenNew = msg.obj;
+        this.apiTokenForm = { name: '', scope: 'readonly', days: 0 };
+        await this.getApiTokens();
+      },
+      async enableApiToken(id, enable) {
+        await HttpUtil.post(`/panel/setting/apiToken/enable/${id}`, { enable });
+        await this.getApiTokens();
+      },
+      async delApiToken(id) {
+        await HttpUtil.post(`/panel/setting/apiToken/del/${id}`);
+        await this.getApiTokens();
       },
       async getAllSetting() {
         const msg = await HttpUtil.post("/panel/setting/all");
@@ -607,6 +632,7 @@
     async mounted() {
       await this.getAllSetting();
       this.getEgressTargets();
+      this.getApiTokens();
 
       while (true) {
         await PromiseUtil.sleep(1000);

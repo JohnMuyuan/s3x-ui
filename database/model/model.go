@@ -171,6 +171,20 @@ type Client struct {
 	ExternalLinks []ClientExternalLink `json:"externalLinks,omitempty"`
 }
 
+// ApiToken lets a script call /panel/api without logging in. Hash is the
+// SHA-256 of the token; the token itself is not kept. Scope is "full" or
+// "readonly"; ExpiresAt 0 never expires. Times are Unix seconds.
+type ApiToken struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Name       string `json:"name" gorm:"uniqueIndex"`
+	Hash       string `json:"hash,omitempty" gorm:"index"`
+	Scope      string `json:"scope"`
+	Enabled    bool   `json:"enabled"`
+	CreatedAt  int64  `json:"createdAt"`
+	ExpiresAt  int64  `json:"expiresAt"`
+	LastUsedAt int64  `json:"lastUsedAt"`
+}
+
 // OutboundSubscription is a remote list of share links whose nodes become Xray
 // outbounds tagged "<TagPrefix>-<name>", refreshed every UpdateInterval hours.
 // Outbounds holds the last good list as JSON.

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"x-ui/util/crypto"
@@ -23,6 +24,7 @@ type SettingController struct {
 	settingService service.SettingService
 	userService    service.UserService
 	panelService   service.PanelService
+	apiTokens      service.ApiTokenService
 }
 
 func NewSettingController(g *gin.RouterGroup) *SettingController {
@@ -40,6 +42,38 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/updateUser", a.updateUser)
 	g.POST("/restartPanel", a.restartPanel)
 	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
+	g.POST("/apiTokens", a.listApiTokens)
+	g.POST("/apiToken/add", a.addApiToken)
+	g.POST("/apiToken/enable/:id", a.enableApiToken)
+	g.POST("/apiToken/del/:id", a.delApiToken)
+}
+
+func (a *SettingController) listApiTokens(c *gin.Context) {
+	tokens, err := a.apiTokens.List()
+	jsonObj(c, tokens, err)
+}
+
+// addApiToken answers with the new token, which is not shown again.
+func (a *SettingController) addApiToken(c *gin.Context) {
+	days, _ := strconv.Atoi(c.PostForm("days"))
+	token, err := a.apiTokens.Create(c.PostForm("name"), c.PostForm("scope"), days)
+	jsonObj(c, token, err)
+}
+
+func (a *SettingController) enableApiToken(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err == nil {
+		err = a.apiTokens.SetEnabled(id, c.PostForm("enable") == "true")
+	}
+	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+}
+
+func (a *SettingController) delApiToken(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err == nil {
+		err = a.apiTokens.Delete(id)
+	}
+	jsonMsg(c, I18nWeb(c, "delete"), err)
 }
 
 func (a *SettingController) getAllSetting(c *gin.Context) {

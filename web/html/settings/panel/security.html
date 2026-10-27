@@ -31,6 +31,52 @@
             </a-space>
         </a-list-item>
     </a-collapse-panel>
+    <a-collapse-panel key="3" header='{{ i18n "pages.settings.security.apiTokens" }}'>
+        <a-alert type="info" show-icon :style="{ margin: '8px 20px' }" message='{{ i18n "pages.settings.security.apiTokensDesc" }}'></a-alert>
+        <a-alert v-if="apiTokenNew" type="success" :style="{ margin: '8px 20px' }" class="api-token-new">
+            <template slot="message">
+                {{ i18n "pages.settings.security.apiTokenShownOnce" }}
+                <div class="api-token-value"><code>[[ apiTokenNew ]]</code>
+                    <a-button size="small" icon="copy" @click="ClipboardManager.copyText(apiTokenNew)"></a-button></div>
+            </template>
+        </a-alert>
+        <a-table :data-source="apiTokens" :row-key="t => t.id" :pagination="false" size="small" :style="{ margin: '0 20px' }"
+            :locale="{ emptyText: '{{ i18n "pages.settings.security.apiTokensEmpty" }}' }">
+            <a-table-column key="name" title='{{ i18n "pages.settings.security.apiTokenName" }}' data-index="name"></a-table-column>
+            <a-table-column key="scope" title='{{ i18n "pages.settings.security.apiTokenScope" }}'>
+                <template slot-scope="t">[[ t.scope === 'full' ? '{{ i18n "pages.settings.security.apiScopeFull" }}' : '{{ i18n "pages.settings.security.apiScopeReadOnly" }}' ]]</template>
+            </a-table-column>
+            <a-table-column key="expires" title='{{ i18n "pages.settings.security.apiTokenExpires" }}'>
+                <template slot-scope="t">
+                    <span v-if="!t.expiresAt">∞</span>
+                    <a-tag v-else-if="t.expiresAt * 1000 < Date.now()" color="red">[[ new Date(t.expiresAt * 1000).toLocaleDateString() ]]</a-tag>
+                    <span v-else>[[ new Date(t.expiresAt * 1000).toLocaleDateString() ]]</span>
+                </template>
+            </a-table-column>
+            <a-table-column key="used" title='{{ i18n "pages.settings.security.apiTokenLastUsed" }}'>
+                <template slot-scope="t">[[ t.lastUsedAt ? new Date(t.lastUsedAt * 1000).toLocaleString() : '-' ]]</template>
+            </a-table-column>
+            <a-table-column key="action">
+                <template slot-scope="t">
+                    <a-switch size="small" :checked="t.enabled" @change="v => enableApiToken(t.id, v)"></a-switch>
+                    <a-popconfirm @confirm="delApiToken(t.id)" title='{{ i18n "pages.settings.security.apiTokenDelConfirm" }}'
+                        :overlay-class-name="themeSwitcher.currentTheme" ok-text='{{ i18n "delete" }}' cancel-text='{{ i18n "cancel" }}'>
+                        <a-button size="small" type="danger" icon="delete" :style="{ marginLeft: '8px' }"></a-button>
+                    </a-popconfirm>
+                </template>
+            </a-table-column>
+        </a-table>
+        <a-space :style="{ margin: '12px 20px' }" class="api-token-form">
+            <a-input v-model.trim="apiTokenForm.name" placeholder='{{ i18n "pages.settings.security.apiTokenName" }}'></a-input>
+            <a-select v-model="apiTokenForm.scope" :style="{ width: '150px' }" :dropdown-class-name="themeSwitcher.currentTheme">
+                <a-select-option value="full">{{ i18n "pages.settings.security.apiScopeFull" }}</a-select-option>
+                <a-select-option value="readonly">{{ i18n "pages.settings.security.apiScopeReadOnly" }}</a-select-option>
+            </a-select>
+            <a-input-number v-model="apiTokenForm.days" :min="0" :style="{ width: '140px' }"
+                :formatter="v => +v ? v + ' {{ i18n "pages.settings.security.apiTokenDays" }}' : '∞'" :parser="v => v.replace(/\D/g, '')"></a-input-number>
+            <a-button type="primary" icon="plus" :disabled="!apiTokenForm.name" @click="addApiToken">{{ i18n "pages.settings.security.apiTokenAdd" }}</a-button>
+        </a-space>
+    </a-collapse-panel>
     <a-collapse-panel key="2" header='{{ i18n "pages.settings.security.twoFactor" }}'>
         <a-setting-list-item paddings="small">
             <template #title>{{ i18n "pages.settings.security.twoFactorEnable" }}</template>
