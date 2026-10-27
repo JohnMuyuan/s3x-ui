@@ -1,0 +1,20 @@
+{{define "form/streamFinalmask"}}
+<a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
+    <a-form-item>
+        <template slot="label">
+            <a-tooltip>
+                <template slot="title">{{ i18n "pages.inbounds.finalmaskDesc" }}</template>
+                FinalMask
+                <a-icon type="question-circle"></a-icon>
+            </a-tooltip>
+        </template>
+        <a-button size="small" @click="inbound.stream.setFinalmaskPreset('salamander')">+ Salamander (UDP)</a-button>
+        <a-button size="small" @click="inbound.stream.setFinalmaskPreset('filter')">+ IP Filter</a-button>
+    </a-form-item>
+    <a-form-item :validate-status="inbound.stream.finalmaskValid ? '' : 'error'"
+        :help="inbound.stream.finalmaskValid ? '' : 'JSON'">
+        <a-textarea v-model="inbound.stream.finalmaskText" :auto-size="{ minRows: 2, maxRows: 12 }"
+            placeholder='{"udp": [{"type": "salamander", "settings": {"password": "..."}}]}'></a-textarea>
+    </a-form-item>
+</a-form>
+{{end}}

@@ -220,6 +220,7 @@
 "postQuantum" = "post-quantum"
 "masqueAddressDesc" = "Client tunnel addresses are leased from these prefixes: at most one IPv4 and one IPv6."
 "tunWarning" = "TUN creates a network interface on the server. Auto Routes send the server's own traffic into it and can cut off SSH; leave them empty unless you know you need them."
+"finalmaskDesc" = "Xray's outermost traffic masks, such as Salamander on UDP or filtering by source IP. Both ends must match; share links hand them to clients as fm (except the server-only IP filter). Clients need Xray 26 or newer."
 "naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "Please provide Telegram Chat ID. (use '/id' command in the bot) or (@userinfobot)"
 "subscriptionDesc" = "To find your subscription URL, navigate to the 'Details'. Additionally, you can use the same name for several clients."

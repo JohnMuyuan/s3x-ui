@@ -216,7 +216,11 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	needRestart := false
 	if inbound.Enable {
 		s.xrayApi.Init(p.GetAPIPort())
-		inboundJson, err1 := json.MarshalIndent(inbound.GenXrayInboundConfig(), "", "  ")
+		inboundConfig, err1 := XrayInboundConfig(inbound)
+		if err1 != nil {
+			logger.Debug("Unable to build inbound config:", err1)
+		}
+		inboundJson, err1 := json.MarshalIndent(inboundConfig, "", "  ")
 		if err1 != nil {
 			logger.Debug("Unable to marshal inbound config:", err1)
 		}
@@ -340,7 +344,11 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 		logger.Debug("Old inbound deleted by api:", tag)
 	}
 	if inbound.Enable {
-		inboundJson, err2 := json.MarshalIndent(oldInbound.GenXrayInboundConfig(), "", "  ")
+		inboundConfig, err2 := XrayInboundConfig(oldInbound)
+		var inboundJson []byte
+		if err2 == nil {
+			inboundJson, err2 = json.MarshalIndent(inboundConfig, "", "  ")
+		}
 		if err2 != nil {
 			logger.Debug("Unable to marshal updated inbound config:", err2)
 			needRestart = true

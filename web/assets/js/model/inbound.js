@@ -955,6 +955,7 @@ class StreamSettings extends XrayCommonClass {
         xhttpSettings = new xHTTPStreamSettings(),
         sockopt = undefined,
         masqueSettings = new MasqueStreamSettings(),
+        finalmask = undefined,
     ) {
         super();
         this.network = network;
@@ -970,6 +971,50 @@ class StreamSettings extends XrayCommonClass {
         this.xhttp = xhttpSettings;
         this.sockopt = sockopt;
         this.masque = masqueSettings;
+        // FinalMask, Xray's last-layer obfuscation, is edited as JSON: it has a
+        // dozen mask types with deeply nested settings.
+        this.finalmaskText = finalmask ? JSON.stringify(finalmask, null, 2) : '';
+    }
+
+    get finalmask() {
+        try {
+            return this.finalmaskText.trim() ? JSON.parse(this.finalmaskText) : undefined;
+        } catch (e) {
+            return undefined;
+        }
+    }
+
+    get finalmaskValid() {
+        return !this.finalmaskText.trim() || this.finalmask !== undefined;
+    }
+
+    // What clients get as the share link's fm parameter: server-only masks
+    // (the source IP filter) left out, nothing when no mask remains.
+    get finalmaskShareable() {
+        const fm = this.finalmask;
+        if (!fm || typeof fm !== 'object') return '';
+        const out = {};
+        for (const [key, value] of Object.entries(fm)) {
+            if (Array.isArray(value)) {
+                const masks = value.filter(m => m && m.type !== 'filter');
+                if (masks.length > 0) out[key] = masks;
+            } else if (value !== undefined && value !== null) {
+                out[key] = value;
+            }
+        }
+        return Object.keys(out).length > 0 ? JSON.stringify(out) : '';
+    }
+
+    setFinalmaskPreset(preset) {
+        const fm = this.finalmask || {};
+        if (preset === 'salamander') {
+            fm.udp = (fm.udp || []).filter(m => m.type !== 'salamander');
+            fm.udp.push({ type: 'salamander', settings: { password: RandomUtil.randomSeq(16) } });
+        } else if (preset === 'filter') {
+            fm.tcp = (fm.tcp || []).filter(m => m.type !== 'filter');
+            fm.tcp.push({ type: 'filter', settings: { blockedSourceIPs: [], allowedSourceIPs: [] } });
+        }
+        this.finalmaskText = JSON.stringify(fm, null, 2);
     }
 
     get isTls() {
@@ -1020,6 +1065,7 @@ class StreamSettings extends XrayCommonClass {
             xHTTPStreamSettings.fromJson(json.xhttpSettings),
             SockoptStreamSettings.fromJson(json.sockopt),
             MasqueStreamSettings.fromJson(json.masqueSettings),
+            json.finalmask,
         );
     }
 
@@ -1039,6 +1085,7 @@ class StreamSettings extends XrayCommonClass {
             xhttpSettings: network === 'xhttp' ? this.xhttp.toJson() : undefined,
             masqueSettings: network === 'masque' ? this.masque.toJson() : undefined,
             sockopt: this.sockopt != undefined ? this.sockopt.toJson() : undefined,
+            finalmask: this.finalmask,
         };
     }
 }
@@ -1372,6 +1419,10 @@ class Inbound extends XrayCommonClass {
             }
         }
 
+        if (this.stream.finalmaskShareable) {
+            obj.fm = this.stream.finalmaskShareable;
+        }
+
         return 'vmess://' + Base64.encode(JSON.stringify(obj, null, 2));
     }
 
@@ -1473,6 +1524,9 @@ class Inbound extends XrayCommonClass {
         }
 
         const link = `vless://${uuid}@${address}:${port}`;
+        if (this.stream.finalmaskShareable) {
+            params.set("fm", this.stream.finalmaskShareable);
+        }
         const url = new URL(link);
         for (const [key, value] of params) {
             url.searchParams.set(key, value)
@@ -1552,6 +1606,9 @@ class Inbound extends XrayCommonClass {
         if (this.isSSMultiUser) password.push(clientPassword);
 
         let link = `ss://${Base64.encode(`${settings.method}:${password.join(':')}`, true)}@${address}:${port}`;
+        if (this.stream.finalmaskShareable) {
+            params.set("fm", this.stream.finalmaskShareable);
+        }
         const url = new URL(link);
         for (const [key, value] of params) {
             url.searchParams.set(key, value)
@@ -1644,6 +1701,9 @@ class Inbound extends XrayCommonClass {
         }
 
         const link = `trojan://${clientPassword}@${address}:${port}`;
+        if (this.stream.finalmaskShareable) {
+            params.set("fm", this.stream.finalmaskShareable);
+        }
         const url = new URL(link);
         for (const [key, value] of params) {
             url.searchParams.set(key, value)

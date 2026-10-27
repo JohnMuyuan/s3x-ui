@@ -43,3 +43,50 @@ func dropAllowInsecure(outbounds json_util.RawMessage) json_util.RawMessage {
 	}
 	return out
 }
+
+// kcpHeaderMask maps 3x-ui's mKCP header types to Xray's mkcp-legacy names.
+var kcpHeaderMask = map[string]string{
+	"dns":          "dns",
+	"dtls":         "dtls",
+	"srtp":         "srtp",
+	"utp":          "utp",
+	"wechat-video": "wechat",
+	"wireguard":    "wireguard",
+}
+
+// kcpLegacyToFinalmask carries a 2.6.2 mKCP seed and header disguise over to
+// the finalmask masks Xray 26 reads instead; it ignores kcpSettings.seed and
+// .header without a word, so clients that still send them could no longer
+// connect. Masks already set by hand win. Seed comes first: the last mask is
+// outermost, putting the header around the cipher as before.
+func kcpLegacyToFinalmask(stream map[string]any) {
+	if network, _ := stream["network"].(string); network != "kcp" {
+		return
+	}
+	kcp, _ := stream["kcpSettings"].(map[string]any)
+	seed, _ := kcp["seed"].(string)
+	header, _ := kcp["header"].(map[string]any)
+	headerType, _ := header["type"].(string)
+	maskHeader := kcpHeaderMask[headerType]
+	if seed == "" && maskHeader == "" {
+		return
+	}
+	finalmask, _ := stream["finalmask"].(map[string]any)
+	if finalmask == nil {
+		finalmask = map[string]any{}
+	}
+	udp, _ := finalmask["udp"].([]any)
+	for _, m := range udp {
+		if mask, _ := m.(map[string]any); mask["type"] == "mkcp-legacy" {
+			return
+		}
+	}
+	if seed != "" {
+		udp = append(udp, map[string]any{"type": "mkcp-legacy", "settings": map[string]any{"header": "", "value": seed}})
+	}
+	if maskHeader != "" {
+		udp = append(udp, map[string]any{"type": "mkcp-legacy", "settings": map[string]any{"header": maskHeader, "value": ""}})
+	}
+	finalmask["udp"] = udp
+	stream["finalmask"] = finalmask
+}
