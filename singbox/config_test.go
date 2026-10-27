@@ -77,6 +77,27 @@ func TestBuildUsersFieldsPerProtocol(t *testing.T) {
 	}
 }
 
+func TestSnellSingleKey(t *testing.T) {
+	settings := `{"psk":"stale","version":5,"clients":[
+		{"email":"off","password":"k0","enable":false},
+		{"email":"a","password":"k1","enable":true},
+		{"email":"b","password":"k2","enable":true}]}`
+	got, err := BuildInbounds(inbound(model.Snell, settings, ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := roundTrip(t, got[0])
+	want := []any{map[string]any{"name": "a", "userkey": "k1"}}
+	if m["psk"] != "k1" || !reflect.DeepEqual(m["users"], want) {
+		t.Fatalf("psk = %v users = %v, want psk k1 and only client a", m["psk"], m["users"])
+	}
+
+	_, err = BuildInbounds(inbound(model.Snell, `{"version":5,"clients":[{"email":"a","password":"k1","enable":false}]}`, ""))
+	if err == nil || !strings.Contains(err.Error(), "no enabled client") {
+		t.Fatalf("err = %v, want no enabled client", err)
+	}
+}
+
 func TestBuildInboundPassesOnlyWhitelistedOptions(t *testing.T) {
 	settings := `{"clients":[],"congestion_control":"bbr","zero_rtt_handshake":true,"uiOnly":"x","heartbeat":""}`
 	got, err := BuildInbounds(inbound(model.TUIC, settings, certTLS))

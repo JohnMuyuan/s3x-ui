@@ -41,6 +41,10 @@ type Inbound struct {
 	multiService multiUserService
 	// users is replaced wholesale by UpdateUsers while connections read it.
 	users atomic.Pointer[[]option.SnellUser]
+	// owner names the only user when its key is the PSK itself. Standard Snell
+	// clients (Surge, mihomo) know just the PSK, so such an inbound runs
+	// single-key and credits every connection to that user.
+	owner string
 }
 
 // multiUserService is implemented by the v5 and v6 multi-user services.
@@ -53,6 +57,10 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 		Adapter: inbound.NewAdapter(C.TypeSnell, tag),
 		router:  uot.NewRouter(router, logger),
 		logger:  logger,
+	}
+	if len(options.Users) == 1 && options.Users[0].UserKey == options.PSK {
+		inbound.owner = options.Users[0].Name
+		options.Users = nil
 	}
 	inbound.users.Store(&options.Users)
 	var userList []int
@@ -197,6 +205,7 @@ func (h *Inbound) newConnection(ctx context.Context, conn net.Conn, metadata ada
 		}
 		h.logger.InfoContext(ctx, "[", user, "] inbound connection to ", metadata.Destination)
 	} else {
+		metadata.User = h.owner
 		h.logger.InfoContext(ctx, "inbound connection to ", metadata.Destination)
 	}
 	h.router.RouteConnectionEx(ctx, conn, metadata, onClose)
@@ -224,6 +233,7 @@ func (h *Inbound) newPacketConnection(ctx context.Context, conn N.PacketConn, me
 		}
 		h.logger.InfoContext(ctx, "[", user, "] inbound packet connection from ", metadata.Source)
 	} else {
+		metadata.User = h.owner
 		h.logger.InfoContext(ctx, "inbound packet connection from ", metadata.Source)
 	}
 	h.router.RoutePacketConnectionEx(ctx, conn, metadata, onClose)

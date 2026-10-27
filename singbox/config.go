@@ -31,7 +31,7 @@ var optionKeys = map[model.Protocol][]string{
 	model.TUIC:      {"congestion_control", "auth_timeout", "zero_rtt_handshake", "heartbeat"},
 	model.Naive:     {"network", "quic_congestion_control"},
 	model.ShadowTLS: {"version", "handshake", "strict_mode"},
-	model.Snell:     {"version", "psk", "obfs_mode", "mode"},
+	model.Snell:     {"version", "obfs_mode", "mode"},
 }
 
 var quicProtocols = map[model.Protocol]bool{model.Hysteria: true, model.Hysteria2: true, model.TUIC: true}
@@ -65,6 +65,11 @@ func BuildInbounds(ib *model.Inbound) ([]map[string]any, error) {
 	}
 	dropEmptyObfs(ib.Protocol, out)
 	out["users"] = buildUsers(ib, settings)
+	if ib.Protocol == model.Snell {
+		if err := snellSingleKey(ib, out); err != nil {
+			return nil, err
+		}
+	}
 
 	if tlsRequired[ib.Protocol] {
 		tls, err := buildTLS(ib)
@@ -152,6 +157,20 @@ func buildUsers(ib *model.Inbound, settings map[string]any) []map[string]any {
 		}
 	}
 	return users
+}
+
+// snellSingleKey serves Snell with one client whose key is the PSK, the only
+// form standard Snell clients (Surge, mihomo) and Sub-Store understand. sbcore
+// recognises a lone user keyed by the PSK and credits traffic to it.
+func snellSingleKey(ib *model.Inbound, out map[string]any) error {
+	users, _ := out["users"].([]map[string]any)
+	if len(users) == 0 {
+		return fmt.Errorf("inbound %q: Snell has no enabled client", ib.Tag)
+	}
+	users = users[:1]
+	out["users"] = users
+	out["psk"] = users[0]["userkey"]
+	return nil
 }
 
 // buildTLS maps the panel's Xray-style TLS/REALITY settings to sing-box's.

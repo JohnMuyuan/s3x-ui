@@ -186,6 +186,10 @@
                 `Endpoint = ${ipv4}:${match[2]}`
               );
             }
+          } else if (qrModal.inbound.protocol == Protocols.NAIVE) {
+            const node = JSON.parse(originalLink);
+            node.server = ipv4;
+            row.link = JSON.stringify(node);
           } else if (qrModal.inbound.protocol == Protocols.SNELL) {
             // Surge proxy line: "name = snell, host, port, ..."
             row.link = originalLink.replace(/= snell, [^,]+,/, `= snell, ${ipv4},`);

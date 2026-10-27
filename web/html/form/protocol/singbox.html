@@ -127,11 +127,6 @@
         <a-select-option v-for="v in [5, 6]" :key="v" :value="v">v[[ v ]]</a-select-option>
       </a-select>
     </a-form-item>
-    <a-form-item label="PSK">
-      <a-input v-model.trim="inbound.settings.psk">
-        <a-icon slot="addonAfter" type="sync" @click="inbound.settings.psk = RandomUtil.randomSeq(32)"></a-icon>
-      </a-input>
-    </a-form-item>
     <a-form-item label="Mode" v-if="inbound.settings.version === 6">
       <a-select v-model="inbound.settings.mode" :dropdown-class-name="themeSwitcher.currentTheme">
         <a-select-option v-for="m in ['default', 'unshaped', 'unsafe-raw']" :key="m" :value="m">[[ m ]]</a-select-option>

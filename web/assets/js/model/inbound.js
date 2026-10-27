@@ -1643,8 +1643,9 @@ class Inbound extends XrayCommonClass {
         }
     }
 
-    // ShadowTLS and Snell have no common URI scheme: ShadowTLS uses Shadowrocket's
-    // ss:// shadow-tls form, Snell a Surge proxy line.
+    // ShadowTLS, Naive and Snell have no common URI scheme, so each uses a form
+    // Sub-Store parses: Shadowrocket's ss:// shadow-tls for ShadowTLS, a
+    // one-line Clash-style node for Naive, and a Surge proxy line for Snell.
     genSingboxLink(address, port, remark, client) {
         const sec = this.stream.security;
         const tls = this.stream.tls;
@@ -1694,15 +1695,19 @@ class Inbound extends XrayCommonClass {
                 params.set('alpn', tls.alpn.length > 0 ? tls.alpn.join(',') : 'hysteria');
                 if (s.obfs) params.set('obfsParam', s.obfs);
                 return `hysteria://${host}:${port}?${params}${hash}`;
-            case Protocols.NAIVE:
-                return `naive+https://${encodeURIComponent(client.email)}:${encodeURIComponent(client.password)}@${host}:${port}${hash}`;
+            case Protocols.NAIVE: {
+                // Sub-Store has no naive:// parser but takes a one-line Clash-style node.
+                const node = { name: remark, type: 'naive', server: address, port: port, username: client.email, password: client.password };
+                if (sni) node.sni = sni;
+                return JSON.stringify(node);
+            }
             case Protocols.SHADOWTLS: {
                 const userInfo = Base64.encode(`${s.ssMethod}:${s.ssPassword}`, true);
                 const stls = Base64.encode(JSON.stringify({ version: String(s.version), host: s.handshakeServer, password: client.password }), true);
                 return `ss://${userInfo}@${host}:${port}?shadow-tls=${stls}${hash}`;
             }
             case Protocols.SNELL: {
-                let line = `${remark} = snell, ${address}, ${port}, psk=${s.psk}, userkey=${client.password}, version=${s.version}`;
+                let line = `${remark} = snell, ${address}, ${port}, psk=${client.password}, version=${s.version}`;
                 if (s.version === 5 && s.obfsMode !== 'none') line += `, obfs=${s.obfsMode}`;
                 if (s.version === 6 && s.mode !== 'default') line += `, mode=${s.mode}`;
                 return line;
@@ -2617,7 +2622,7 @@ Inbound.SingboxSettings = class extends Inbound.Settings {
                     ssPassword: RandomUtil.randomShadowsocksPassword(SSMethods.BLAKE3_AES_128_GCM),
                 };
             case Protocols.SNELL:
-                return { version: 5, psk: RandomUtil.randomSeq(32), obfsMode: 'none', mode: 'default' };
+                return { version: 5, obfsMode: 'none', mode: 'default' };
             default:
                 return {};
         }
@@ -2659,7 +2664,6 @@ Inbound.SingboxSettings = class extends Inbound.Settings {
                 break;
             case Protocols.SNELL:
                 if (has('version')) o.version = json.version;
-                if (has('psk')) o.psk = json.psk;
                 if (has('obfs_mode')) o.obfsMode = json.obfs_mode;
                 if (has('mode')) o.mode = json.mode;
                 break;
@@ -2697,7 +2701,6 @@ Inbound.SingboxSettings = class extends Inbound.Settings {
                 break;
             case Protocols.SNELL:
                 out.version = this.version;
-                out.psk = this.psk;
                 if (this.version === 5) out.obfs_mode = this.obfsMode;
                 if (this.version === 6) out.mode = this.mode;
                 break;

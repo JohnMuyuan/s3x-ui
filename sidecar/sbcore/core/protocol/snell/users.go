@@ -11,6 +11,12 @@ import (
 // Snell authenticates every request, including the ones that follow on a reused
 // connection, so a removed user is locked out as soon as the service is
 // updated; no session has to be cut beyond the connections already in flight.
+// MultiUser reports whether users can be swapped in place; a single-key
+// inbound has to be rebuilt when its user changes.
+func (h *Inbound) MultiUser() bool {
+	return h.multiService != nil
+}
+
 func (h *Inbound) UpdateUsers(users []option.SnellUser) error {
 	if h.multiService == nil {
 		return E.New("snell: inbound is not multi-user")

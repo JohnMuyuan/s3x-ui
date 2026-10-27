@@ -43,10 +43,11 @@ func (c *Core) UpdateInboundUsers(config []byte) (bool, error) {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.SnellInboundOptions:
-		if len(options.Users) == 0 {
+		singleKey := len(options.Users) == 1 && options.Users[0].UserKey == options.PSK
+		if len(options.Users) == 0 || singleKey {
 			return false, nil
 		}
-		if in, ok := inb.(*suiSnell.Inbound); ok {
+		if in, ok := inb.(*suiSnell.Inbound); ok && in.MultiUser() {
 			return true, in.UpdateUsers(options.Users)
 		}
 	}
