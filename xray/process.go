@@ -107,6 +107,7 @@ type process struct {
 	logWriter *LogWriter
 	exitErr   error
 	startTime time.Time
+	exited    chan struct{}
 }
 
 func newProcess(config *Config) *process {
@@ -215,13 +216,16 @@ func (p *process) Start() (err error) {
 		return common.NewErrorf("Failed to write configuration file: %v", err)
 	}
 
+	clearStaleTunRules()
 	cmd := exec.Command(GetBinaryPath(), "-c", configPath)
 	p.cmd = cmd
+	p.exited = make(chan struct{})
 
 	cmd.Stdout = p.logWriter
 	cmd.Stderr = p.logWriter
 
 	go func() {
+		defer close(p.exited)
 		err := cmd.Run()
 		if err != nil {
 			logger.Error("Failure in running xray-core:", err)
@@ -239,7 +243,22 @@ func (p *process) Stop() error {
 	if !p.IsRunning() {
 		return errors.New("xray is not running")
 	}
-	return p.cmd.Process.Signal(syscall.SIGTERM)
+	if err := p.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		return err
+	}
+	// The next Xray must not start while this one shuts down: its kernel
+	// WireGuard TUN cleanup would take the new one's routing rules along, and
+	// its listeners may still hold the ports.
+	select {
+	case <-p.exited:
+	case <-time.After(5 * time.Second):
+		p.cmd.Process.Kill()
+		select {
+		case <-p.exited:
+		case <-time.After(2 * time.Second):
+		}
+	}
+	return nil
 }
 
 func writeCrachReport(m []byte) error {
