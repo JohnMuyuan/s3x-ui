@@ -131,6 +131,12 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 			}
 
 			settings["clients"] = final_clients
+			// Xray refuses fallbacks, even an empty list, next to VLESS encryption;
+			// the client half of the key pair is only for share links.
+			if dec, _ := settings["decryption"].(string); dec != "" && dec != "none" {
+				delete(settings, "fallbacks")
+			}
+			delete(settings, "encryption")
 			modifiedSettings, err := json.MarshalIndent(settings, "", "  ")
 			if err != nil {
 				return nil, err

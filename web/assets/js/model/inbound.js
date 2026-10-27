@@ -1241,6 +1241,10 @@ class Inbound extends XrayCommonClass {
 
     //this is used for xtls-rprx-vision
     canEnableTlsFlow() {
+        if (this.protocol === Protocols.VLESS && this.settings.encryptionEnabled) {
+            // VLESS encryption carries Vision on any transport.
+            return true;
+        }
         if (((this.stream.security === 'tls') || (this.stream.security === 'reality')) && (this.network === "tcp")) {
             return this.protocol === Protocols.VLESS;
         }
@@ -1424,6 +1428,13 @@ class Inbound extends XrayCommonClass {
 
         else {
             params.set("security", "none");
+        }
+
+        if (this.settings.encryptionEnabled) {
+            params.set("encryption", this.settings.encryption);
+            if (!ObjectUtil.isEmpty(flow)) {
+                params.set("flow", flow);
+            }
         }
 
         const link = `vless://${uuid}@${address}:${port}`;
@@ -1957,12 +1968,30 @@ Inbound.VLESSSettings = class extends Inbound.Settings {
         protocol,
         vlesses = [new Inbound.VLESSSettings.VLESS()],
         decryption = 'none',
-        fallbacks = []
+        fallbacks = [],
+        encryption = 'none',
     ) {
         super(protocol);
         this.vlesses = vlesses;
         this.decryption = decryption;
         this.fallbacks = fallbacks;
+        // Client side of the VLESS encryption key pair, handed out in share links.
+        this.encryption = encryption;
+    }
+
+    get encryptionEnabled() {
+        return !!this.decryption && this.decryption !== 'none';
+    }
+
+    // 'none', 'x25519' or 'mlkem768': an ML-KEM-768 public key runs to
+    // well over a thousand characters, an X25519 one to 43.
+    get encryptionAuth() {
+        if (!this.encryptionEnabled) return 'none';
+        return (this.encryption || '').split('.').pop().length > 300 ? 'mlkem768' : 'x25519';
+    }
+
+    get encryptionMode() {
+        return this.encryptionEnabled ? (this.decryption.split('.')[1] || 'native') : 'native';
     }
 
     addFallback() {
@@ -1979,14 +2008,17 @@ Inbound.VLESSSettings = class extends Inbound.Settings {
             Protocols.VLESS,
             json.clients.map(client => Inbound.VLESSSettings.VLESS.fromJson(client)),
             json.decryption || 'none',
-            Inbound.VLESSSettings.Fallback.fromJson(json.fallbacks),);
+            Inbound.VLESSSettings.Fallback.fromJson(json.fallbacks),
+            json.encryption || 'none',);
     }
 
     toJson() {
         return {
             clients: Inbound.VLESSSettings.toJsonArray(this.vlesses),
             decryption: this.decryption,
-            fallbacks: Inbound.VLESSSettings.toJsonArray(this.fallbacks),
+            encryption: this.encryption,
+            // Xray does not allow fallbacks with VLESS encryption.
+            fallbacks: this.encryptionEnabled ? [] : Inbound.VLESSSettings.toJsonArray(this.fallbacks),
         };
     }
 };

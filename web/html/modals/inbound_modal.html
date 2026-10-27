@@ -139,6 +139,21 @@
                     }
                 });
             },
+            async setVlessEnc(auth, mode) {
+                const settings = inModal.inbound.settings;
+                if (auth === 'none') {
+                    settings.decryption = 'none';
+                    settings.encryption = 'none';
+                    return;
+                }
+                const msg = await HttpUtil.post('/server/getNewVlessEnc');
+                if (!msg.success) return;
+                const id = mode === 'native' ? auth : `${auth}_${mode}`;
+                const pair = msg.obj.find(a => a.id === id);
+                if (!pair) return;
+                settings.decryption = pair.decryption;
+                settings.encryption = pair.encryption;
+            },
             async setSelfSignedCert(index) {
                 const msg = await HttpUtil.post('/server/getSelfSignedCert');
                 if (!msg.success) {

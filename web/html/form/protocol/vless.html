@@ -18,7 +18,40 @@
     </table>
   </a-collapse-panel>
 </a-collapse>
-<template v-if="inbound.isTcp">
+<a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
+  <a-form-item>
+    <template slot="label">
+      <a-tooltip>
+        <template slot="title">{{ i18n "pages.inbounds.vlessEncryptionDesc" }}</template>
+        {{ i18n "pages.inbounds.vlessEncryption" }}
+        <a-icon type="question-circle"></a-icon>
+      </a-tooltip>
+    </template>
+    <a-select :value="inbound.settings.encryptionAuth" @change="auth => setVlessEnc(auth, inbound.settings.encryptionMode)"
+      :dropdown-class-name="themeSwitcher.currentTheme">
+      <a-select-option value="none">none</a-select-option>
+      <a-select-option value="mlkem768">ML-KEM-768 ({{ i18n "pages.inbounds.postQuantum" }})</a-select-option>
+      <a-select-option value="x25519">X25519</a-select-option>
+    </a-select>
+  </a-form-item>
+  <template v-if="inbound.settings.encryptionEnabled">
+    <a-form-item label="Mode">
+      <a-select :value="inbound.settings.encryptionMode" @change="mode => setVlessEnc(inbound.settings.encryptionAuth, mode)"
+        :dropdown-class-name="themeSwitcher.currentTheme">
+        <a-select-option v-for="mode in ['native', 'xorpub', 'random']" :value="mode">[[ mode ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+    <a-form-item label="Decryption">
+      <a-input v-model.trim="inbound.settings.decryption">
+        <a-icon slot="addonAfter" type="sync" @click="setVlessEnc(inbound.settings.encryptionAuth, inbound.settings.encryptionMode)"></a-icon>
+      </a-input>
+    </a-form-item>
+    <a-form-item label="Encryption">
+      <a-input v-model.trim="inbound.settings.encryption"></a-input>
+    </a-form-item>
+  </template>
+</a-form>
+<template v-if="inbound.isTcp && !inbound.settings.encryptionEnabled">
   <a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
     <a-form-item label="Fallbacks">
       <a-button icon="plus" type="primary" size="small" @click="inbound.settings.addFallback()"></a-button>

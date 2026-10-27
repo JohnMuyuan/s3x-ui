@@ -219,6 +219,9 @@
 "IPLimitlogclear" = "پاک کردن گزارش‌ها"
 "setDefaultCert" = "استفاده از گواهی پنل"
 "setSelfSignedCert" = "Self-signed Cert"
+"vlessEncryption" = "VLESS Encryption"
+"vlessEncryptionDesc" = "VLESS's own encryption layer, which resists probing even without TLS; ML-KEM-768 is post-quantum. Clients need Xray 25.8 or newer."
+"postQuantum" = "post-quantum"
 "naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "لطفا شناسه گفتگوی تلگرام را وارد کنید. (از دستور '/id' در ربات استفاده کنید) یا (@userinfobot)"
 "subscriptionDesc" = "شما می‌توانید لینک سابسکربپشن خودرا در 'جزئیات' پیدا کنید، همچنین می‌توانید از همین نام برای چندین کاربر استفاده‌کنید"
@@ -265,6 +268,7 @@
 "trafficGetError" = "خطا در دریافت ترافیک‌ها"
 "getNewX25519CertError" = "خطا در دریافت گواهی X25519."
 "getSelfSignedCertError" = "Error while creating the self-signed certificate."
+"getNewVlessEncError" = "Failed to generate VLESS encryption keys"
 
 [pages.inbounds.stream.general]
 "request" = "درخواست"

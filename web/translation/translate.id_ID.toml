@@ -219,6 +219,9 @@
 "IPLimitlogclear" = "Hapus Log"
 "setDefaultCert" = "Atur Sertifikat dari Panel"
 "setSelfSignedCert" = "Self-signed Cert"
+"vlessEncryption" = "VLESS Encryption"
+"vlessEncryptionDesc" = "VLESS's own encryption layer, which resists probing even without TLS; ML-KEM-768 is post-quantum. Clients need Xray 25.8 or newer."
+"postQuantum" = "post-quantum"
 "naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "Harap berikan ID Obrolan Telegram. (gunakan perintah '/id' di bot) atau (@userinfobot)"
 "subscriptionDesc" = "Untuk menemukan URL langganan Anda, buka 'Rincian'. Selain itu, Anda dapat menggunakan nama yang sama untuk beberapa klien."
@@ -265,6 +268,7 @@
 "trafficGetError" = "Gagal mendapatkan data lalu lintas"
 "getNewX25519CertError" = "Terjadi kesalahan saat mendapatkan sertifikat X25519."
 "getSelfSignedCertError" = "Error while creating the self-signed certificate."
+"getNewVlessEncError" = "Failed to generate VLESS encryption keys"
 
 [pages.inbounds.stream.general]
 "request" = "Permintaan"

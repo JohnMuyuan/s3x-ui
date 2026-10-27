@@ -221,6 +221,9 @@
 "IPLimitlogclear" = "清除日誌"
 "setDefaultCert" = "從面板設定證書"
 "setSelfSignedCert" = "一鍵自簽憑證"
+"vlessEncryption" = "VLESS 加密"
+"vlessEncryptionDesc" = "VLESS 自帶的加密層，不依賴 TLS 也能防探測；選擇 ML-KEM-768 可抗量子計算。用戶端需支援 Xray 25.8 以上。"
+"postQuantum" = "抗量子"
 "naiveNeedsRealCert" = "Naive 用戶端不接受自簽憑證。請先在伺服器上執行 x-ui，選「SSL Certificate Management」申請網域憑證（儲存在 /root/cert/網域/），再把憑證和私鑰路徑填到下方。"
 "telegramDesc" = "請提供Telegram聊天ID。（在機器人中使用'/id'命令）或（@userinfobot"
 "subscriptionDesc" = "要找到你的訂閱 URL，請導航到“詳細資訊”。此外，你可以為多個客戶端使用相同的名稱。"
@@ -267,6 +270,7 @@
 "trafficGetError" = "取得流量資料時發生錯誤"
 "getNewX25519CertError" = "取得X25519憑證時發生錯誤。"
 "getSelfSignedCertError" = "產生自簽憑證時出錯。"
+"getNewVlessEncError" = "產生 VLESS 加密金鑰失敗"
 
 [pages.inbounds.stream.general]
 "request" = "請求"

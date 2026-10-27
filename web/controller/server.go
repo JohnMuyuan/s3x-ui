@@ -50,6 +50,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getDb", a.getDb)
 	g.POST("/importDB", a.importDB)
 	g.POST("/getNewX25519Cert", a.getNewX25519Cert)
+	g.POST("/getNewVlessEnc", a.getNewVlessEnc)
 	g.POST("/getSelfSignedCert", a.getSelfSignedCert)
 }
 
@@ -198,6 +199,15 @@ func (a *ServerController) getSelfSignedCert(c *gin.Context) {
 		return
 	}
 	jsonObj(c, cert, nil)
+}
+
+func (a *ServerController) getNewVlessEnc(c *gin.Context) {
+	auths, err := a.serverService.GetNewVlessEnc()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.getNewVlessEncError"), err)
+		return
+	}
+	jsonObj(c, auths, nil)
 }
 
 func (a *ServerController) getNewX25519Cert(c *gin.Context) {

@@ -219,6 +219,9 @@
 "IPLimitlogclear" = "Limpiar el Registro"
 "setDefaultCert" = "Establecer certificado desde el panel"
 "setSelfSignedCert" = "Self-signed Cert"
+"vlessEncryption" = "VLESS Encryption"
+"vlessEncryptionDesc" = "VLESS's own encryption layer, which resists probing even without TLS; ML-KEM-768 is post-quantum. Clients need Xray 25.8 or newer."
+"postQuantum" = "post-quantum"
 "naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "Por favor, proporciona el ID de Chat de Telegram. (usa el comando '/id' en el bot) o (@userinfobot)"
 "subscriptionDesc" = "Puedes encontrar tu enlace de suscripción en Detalles, también puedes usar el mismo nombre para varias configuraciones."
@@ -265,6 +268,7 @@
 "trafficGetError" = "Error al obtener los tráficos"
 "getNewX25519CertError" = "Error al obtener el certificado X25519."
 "getSelfSignedCertError" = "Error while creating the self-signed certificate."
+"getNewVlessEncError" = "Failed to generate VLESS encryption keys"
 
 [pages.inbounds.stream.general]
 "request" = "Pedido"

@@ -449,6 +449,16 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 		params["security"] = "none"
 	}
 
+	// VLESS encryption carries Vision on any transport.
+	var settings map[string]any
+	json.Unmarshal([]byte(inbound.Settings), &settings)
+	if enc, _ := settings["encryption"].(string); enc != "" && enc != "none" {
+		params["encryption"] = enc
+		if len(clients[clientIndex].Flow) > 0 {
+			params["flow"] = clients[clientIndex].Flow
+		}
+	}
+
 	externalProxies, _ := stream["externalProxy"].([]any)
 
 	if len(externalProxies) > 0 {

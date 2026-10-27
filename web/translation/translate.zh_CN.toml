@@ -219,6 +219,9 @@
 "IPLimitlogclear" = "清除日志"
 "setDefaultCert" = "从面板设置证书"
 "setSelfSignedCert" = "一键自签证书"
+"vlessEncryption" = "VLESS 加密"
+"vlessEncryptionDesc" = "VLESS 自带的加密层，不依赖 TLS 也能防探测；选择 ML-KEM-768 可抗量子计算。客户端需支持 Xray 25.8 以上。"
+"postQuantum" = "抗量子"
 "naiveNeedsRealCert" = "Naive 客户端不接受自签证书。请先在服务器上运行 x-ui，选「SSL Certificate Management」申请域名证书（保存在 /root/cert/域名/），再把证书和私钥路径填到下方。"
 "telegramDesc" = "请提供Telegram聊天ID。（在机器人中使用'/id'命令）或（@userinfobot"
 "subscriptionDesc" = "要找到你的订阅 URL，请导航到“详细信息”。此外，你可以为多个客户端使用相同的名称。"
@@ -265,6 +268,7 @@
 "trafficGetError" = "获取流量数据时出错"
 "getNewX25519CertError" = "获取X25519证书时出错。"
 "getSelfSignedCertError" = "生成自签证书时出错。"
+"getNewVlessEncError" = "生成 VLESS 加密密钥失败"
 
 [pages.inbounds.stream.general]
 "request" = "请求"
