@@ -154,6 +154,7 @@ func (s *InboundService) checkEmailExistForInbound(inbound *model.Inbound) (stri
 }
 
 func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
+	inbound.LastTrafficResetTime = time.Now().UnixMilli()
 	exist, err := s.checkPortExist(inbound.Listen, inbound.Port, 0)
 	if err != nil {
 		return inbound, false, err
@@ -329,6 +330,12 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	oldInbound.Remark = inbound.Remark
 	oldInbound.Enable = inbound.Enable
 	oldInbound.ExpiryTime = inbound.ExpiryTime
+	if oldInbound.TrafficReset != inbound.TrafficReset || oldInbound.TrafficResetDay != inbound.TrafficResetDay {
+		// a new schedule starts from now rather than resetting at once
+		oldInbound.LastTrafficResetTime = time.Now().UnixMilli()
+	}
+	oldInbound.TrafficReset = inbound.TrafficReset
+	oldInbound.TrafficResetDay = inbound.TrafficResetDay
 	oldInbound.Listen = inbound.Listen
 	oldInbound.Port = inbound.Port
 	oldInbound.Protocol = inbound.Protocol

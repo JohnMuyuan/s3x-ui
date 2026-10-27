@@ -9,6 +9,8 @@ class DBInbound {
         this.remark = "";
         this.enable = true;
         this.expiryTime = 0;
+        this.trafficReset = "never";
+        this.trafficResetDay = 1;
 
         this.listen = "";
         this.port = 0;

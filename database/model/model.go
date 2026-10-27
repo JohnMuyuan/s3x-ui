@@ -93,6 +93,12 @@ type Inbound struct {
 	ExpiryTime  int64                `json:"expiryTime" form:"expiryTime"`
 	ClientStats []xray.ClientTraffic `gorm:"foreignKey:InboundId;references:Id" json:"clientStats" form:"clientStats"`
 
+	// TrafficReset zeroes the inbound's and its clients' traffic every period:
+	// never, hourly, daily, weekly (Monday) or monthly on TrafficResetDay.
+	TrafficReset         string `json:"trafficReset" form:"trafficReset" gorm:"default:never"`
+	TrafficResetDay      int    `json:"trafficResetDay" form:"trafficResetDay" gorm:"default:1"`
+	LastTrafficResetTime int64  `json:"lastTrafficResetTime" form:"-" gorm:"default:0"`
+
 	// config part
 	Listen         string   `json:"listen" form:"listen"`
 	Port           int      `json:"port" form:"port"`
