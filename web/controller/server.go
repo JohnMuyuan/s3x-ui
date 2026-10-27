@@ -41,6 +41,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.Use(a.checkLogin)
 	g.POST("/status", a.status)
 	g.POST("/getXrayVersion", a.getXrayVersion)
+	g.POST("/realityScan", a.realityScan)
 	g.POST("/stopXrayService", a.stopXrayService)
 	g.POST("/restartXrayService", a.restartXrayService)
 	g.POST("/installXray/:version", a.installXray)
@@ -74,6 +75,10 @@ func (a *ServerController) status(c *gin.Context) {
 	a.lastGetStatusTime = time.Now()
 
 	jsonObj(c, a.lastStatus, nil)
+}
+
+func (a *ServerController) realityScan(c *gin.Context) {
+	jsonObj(c, a.serverService.ScanRealityTargets(c.PostForm("targets")), nil)
 }
 
 func (a *ServerController) getXrayVersion(c *gin.Context) {

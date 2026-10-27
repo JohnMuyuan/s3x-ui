@@ -1,4 +1,10 @@
 {{define "form/realitySettings"}}
+<style>
+    .reality-scan-results { max-height: 260px; overflow-y: auto; margin-top: 6px; }
+    .reality-scan-row { display: flex; align-items: center; gap: 8px; line-height: 28px; }
+    .reality-scan-host { font-family: monospace; }
+    .reality-scan-meta { opacity: .6; font-size: 12px; flex: 1; }
+</style>
 <template>
     <a-form-item label='Show'>
         <a-switch v-model="inbound.stream.reality.show"></a-switch>
@@ -13,7 +19,23 @@
         </a-select>
     </a-form-item>
     <a-form-item label='Dest (Target)'>
-        <a-input v-model.trim="inbound.stream.reality.dest"></a-input>
+        <a-input-search v-model.trim="inbound.stream.reality.dest" @search="realityScan.open = !realityScan.open">
+            <a-button slot="enterButton" icon="radar-chart">{{ i18n "pages.inbounds.realityScan" }}</a-button>
+        </a-input-search>
+    </a-form-item>
+    <a-form-item v-if="realityScan.open" :wrapper-col="{ span: 24 }">
+        <a-input-search v-model="realityScan.targets" :loading="realityScan.loading" @search="scanReality"
+            placeholder='{{ i18n "pages.inbounds.realityScanPlaceholder" }}'>
+            <a-button slot="enterButton" type="primary" :loading="realityScan.loading">{{ i18n "pages.inbounds.realityScanStart" }}</a-button>
+        </a-input-search>
+        <div class="reality-scan-results">
+            <div v-for="r in realityScan.results" :key="r.target" class="reality-scan-row">
+                <a-tag :color="r.feasible ? 'green' : 'red'">[[ r.feasible ? 'OK' : r.reason ]]</a-tag>
+                <span class="reality-scan-host">[[ r.host ]]</span>
+                <span class="reality-scan-meta" v-if="r.latencyMs">[[ r.latencyMs ]] ms · [[ r.certIssuer ]]</span>
+                <a v-if="r.feasible" @click="useRealityTarget(r)">{{ i18n "pages.inbounds.realityScanUse" }}</a>
+            </div>
+        </div>
     </a-form-item>
     <a-form-item label='SNI'>
         <a-input v-model.trim="inbound.stream.reality.serverNames"></a-input>

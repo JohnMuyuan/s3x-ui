@@ -69,6 +69,7 @@
         data: {
             inModal: inModal,
             delayedStart: false,
+            realityScan: { open: false, targets: '', loading: false, results: [] },
             get inbound() {
                 return inModal.inbound;
             },
@@ -159,6 +160,20 @@
                         this.setSelfSignedCert(0);
                     }
                 });
+            },
+            async scanReality() {
+                this.realityScan.loading = true;
+                const msg = await HttpUtil.post('/server/realityScan', { targets: this.realityScan.targets });
+                this.realityScan.loading = false;
+                if (msg.success) this.realityScan.results = msg.obj;
+            },
+            useRealityTarget(r) {
+                const reality = inModal.inbound.stream.reality;
+                const port = r.target.slice(r.target.lastIndexOf(':') + 1);
+                reality.dest = `${r.host}:${port}`;
+                // the name scanned first, then the certificate's other names
+                reality.serverNames = [r.host, ...(r.serverNames || []).filter(n => n !== r.host)].slice(0, 4).join(',');
+                this.realityScan.open = false;
             },
             async setVlessEnc(auth, mode) {
                 const settings = inModal.inbound.settings;
