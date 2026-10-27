@@ -1,4 +1,4 @@
-name: Release 3X-UI
+name: Release S3X-UI
 
 on:
   workflow_dispatch:
@@ -13,9 +13,11 @@ on:
       - '**.html'
       - '**.sh'
       - '**.go'
-      - 'go.mod'
-      - 'go.sum'
+      - '**/go.mod'
+      - '**/go.sum'
+      - 'config/version'
       - 'x-ui.service'
+      - '.github/workflows/release.yml'
 
 jobs:
   build:
@@ -26,11 +28,6 @@ jobs:
         platform:
           - amd64
           - arm64
-          - armv7
-          - armv6
-          - 386
-          - armv5
-          - s390x
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -41,93 +38,49 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
+          cache-dependency-path: |
+            go.sum
+            sidecar/sbcore/go.sum
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           if [ "${{ matrix.platform }}" == "arm64" ]; then
             sudo apt install gcc-aarch64-linux-gnu
-          elif [ "${{ matrix.platform }}" == "armv7" ]; then
-            sudo apt install gcc-arm-linux-gnueabihf
-          elif [ "${{ matrix.platform }}" == "armv6" ]; then
-            sudo apt install gcc-arm-linux-gnueabihf
-          elif [ "${{ matrix.platform }}" == "386" ]; then
-            sudo apt install gcc-i686-linux-gnu
-          elif [ "${{ matrix.platform }}" == "armv5" ]; then
-            sudo apt install gcc-arm-linux-gnueabi
-          elif [ "${{ matrix.platform }}" == "s390x" ]; then
-            sudo apt install gcc-s390x-linux-gnu
           fi
 
-      - name: Build 3x-ui
+      - name: Build panel
         run: |
           export CGO_ENABLED=1
           export GOOS=linux
           export GOARCH=${{ matrix.platform }}
           if [ "${{ matrix.platform }}" == "arm64" ]; then
-            export GOARCH=arm64
             export CC=aarch64-linux-gnu-gcc
-          elif [ "${{ matrix.platform }}" == "armv7" ]; then
-            export GOARCH=arm
-            export GOARM=7
-            export CC=arm-linux-gnueabihf-gcc
-          elif [ "${{ matrix.platform }}" == "armv6" ]; then
-            export GOARCH=arm
-            export GOARM=6
-            export CC=arm-linux-gnueabihf-gcc
-          elif [ "${{ matrix.platform }}" == "386" ]; then
-            export GOARCH=386
-            export CC=i686-linux-gnu-gcc
-          elif [ "${{ matrix.platform }}" == "armv5" ]; then
-            export GOARCH=arm
-            export GOARM=5
-            export CC=arm-linux-gnueabi-gcc
-          elif [ "${{ matrix.platform }}" == "s390x" ]; then
-            export GOARCH=s390x
-            export CC=s390x-linux-gnu-gcc
           fi
           go build -ldflags "-w -s" -o xui-release -v main.go
-          
-          mkdir x-ui
-          cp xui-release x-ui/
-          cp x-ui.service x-ui/
-          cp x-ui.sh x-ui/
-          mv x-ui/xui-release x-ui/x-ui
-          mkdir x-ui/bin
+
+      - name: Build sbcore
+        run: |
+          cd sidecar/sbcore
+          sh build.sh ${{ matrix.platform }} ../../sbcore-linux-${{ matrix.platform }}
+
+      - name: Assemble
+        run: |
+          mkdir -p x-ui/bin
+          mv xui-release x-ui/x-ui
+          cp x-ui.service x-ui.sh x-ui/
+          mv sbcore-linux-${{ matrix.platform }} x-ui/bin/
           cd x-ui/bin
-          
-          # Download dependencies
+
           Xray_URL="https://github.com/XTLS/Xray-core/releases/download/v26.10.21/"
           if [ "${{ matrix.platform }}" == "amd64" ]; then
-            wget -q ${Xray_URL}Xray-linux-64.zip
-            unzip Xray-linux-64.zip
-            rm -f Xray-linux-64.zip
-          elif [ "${{ matrix.platform }}" == "arm64" ]; then
-            wget -q ${Xray_URL}Xray-linux-arm64-v8a.zip
-            unzip Xray-linux-arm64-v8a.zip
-            rm -f Xray-linux-arm64-v8a.zip
-          elif [ "${{ matrix.platform }}" == "armv7" ]; then
-            wget -q ${Xray_URL}Xray-linux-arm32-v7a.zip
-            unzip Xray-linux-arm32-v7a.zip
-            rm -f Xray-linux-arm32-v7a.zip
-          elif [ "${{ matrix.platform }}" == "armv6" ]; then
-            wget -q ${Xray_URL}Xray-linux-arm32-v6.zip
-            unzip Xray-linux-arm32-v6.zip
-            rm -f Xray-linux-arm32-v6.zip
-          elif [ "${{ matrix.platform }}" == "386" ]; then
-            wget -q ${Xray_URL}Xray-linux-32.zip
-            unzip Xray-linux-32.zip
-            rm -f Xray-linux-32.zip
-          elif [ "${{ matrix.platform }}" == "armv5" ]; then
-            wget -q ${Xray_URL}Xray-linux-arm32-v5.zip
-            unzip Xray-linux-arm32-v5.zip
-            rm -f Xray-linux-arm32-v5.zip
-          elif [ "${{ matrix.platform }}" == "s390x" ]; then
-            wget -q ${Xray_URL}Xray-linux-s390x.zip
-            unzip Xray-linux-s390x.zip
-            rm -f Xray-linux-s390x.zip
+            Xray_ZIP=Xray-linux-64.zip
+          else
+            Xray_ZIP=Xray-linux-arm64-v8a.zip
           fi
-          rm -f geoip.dat geosite.dat
+          wget -q ${Xray_URL}${Xray_ZIP}
+          unzip ${Xray_ZIP}
+          rm -f ${Xray_ZIP} geoip.dat geosite.dat
           wget -q https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -q https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
           wget -q -O geoip_IR.dat https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat
@@ -135,8 +88,8 @@ jobs:
           wget -q -O geoip_RU.dat https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -q -O geosite_RU.dat https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geosite.dat
           mv xray xray-linux-${{ matrix.platform }}
-          cd ../..
-          
+          chmod +x xray-linux-${{ matrix.platform }} sbcore-linux-${{ matrix.platform }}
+
       - name: Package
         run: tar -zcvf x-ui-linux-${{ matrix.platform }}.tar.gz x-ui
 
@@ -146,6 +99,7 @@ jobs:
           name: x-ui-linux-${{ matrix.platform }}
           path: ./x-ui-linux-${{ matrix.platform }}.tar.gz
 
+      # Not marked prerelease: install.sh resolves releases/latest, which skips prereleases.
       - name: Upload files to GH release
         uses: svenstaro/upload-release-action@v2
         if: github.event_name == 'release' && github.event.action == 'published'
@@ -154,4 +108,3 @@ jobs:
           tag: ${{ github.ref }}
           file: x-ui-linux-${{ matrix.platform }}.tar.gz
           asset_name: x-ui-linux-${{ matrix.platform }}.tar.gz
-          prerelease: true
