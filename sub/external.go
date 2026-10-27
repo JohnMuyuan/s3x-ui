@@ -13,6 +13,7 @@ import (
 
 	"x-ui/database/model"
 	"x-ui/logger"
+	"x-ui/web/service"
 
 	"github.com/goccy/go-json"
 )
@@ -31,8 +32,6 @@ var subscriptionCache = struct {
 	links map[string][]string
 	at    map[string]time.Time
 }{links: map[string][]string{}, at: map[string]time.Time{}}
-
-var subscriptionClient = &http.Client{Timeout: subscriptionTimeout}
 
 // externalLinks renders clients' external entries: share links as they are
 // (renamed by their remark), subscriptions' links merged in (prefixed by
@@ -100,7 +99,7 @@ func downloadSubscription(rawURL string) ([]string, error) {
 	}
 	// providers send a plain share-link list to v2rayN, and Clash YAML to others
 	req.Header.Set("User-Agent", "v2rayN/7.0")
-	resp, err := subscriptionClient.Do(req)
+	resp, err := service.PanelHTTPClient(subscriptionTimeout).Do(req)
 	if err != nil {
 		return nil, err
 	}

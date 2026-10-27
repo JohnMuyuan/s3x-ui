@@ -74,6 +74,7 @@ var defaultValueMap = map[string]string{
 	"externalTrafficInformEnable": "false",
 	"externalTrafficInformURI":    "",
 	"ipLimitAllowlist":            "",
+	"panelOutbound":               "",
 }
 
 type SettingService struct{}
@@ -536,6 +537,12 @@ func (s *SettingService) GetExternalTrafficInformURI() (string, error) {
 
 func (s *SettingService) SetExternalTrafficInformURI(InformURI string) error {
 	return s.setString("externalTrafficInformURI", InformURI)
+}
+
+// GetPanelOutbound is the Xray outbound or balancer the panel's own requests
+// leave through, "" for a direct connection.
+func (s *SettingService) GetPanelOutbound() (string, error) {
+	return s.getString("panelOutbound")
 }
 
 func (s *SettingService) GetIpLimitAllowlist() (string, error) {

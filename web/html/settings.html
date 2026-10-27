@@ -176,6 +176,7 @@
       oldAllSetting: new AllSetting(),
       allSetting: new AllSetting(),
       saveBtnDisable: true,
+      egressTargets: [],
       user: {},
       lang: LanguageManager.getLanguage(),
       remarkModels: { i: 'Inbound', e: 'Email', o: 'Other' },
@@ -286,6 +287,14 @@
     methods: {
       loading(spinning = true) {
         this.loadingStates.spinning = spinning;
+      },
+      // the outbounds and balancers of the Xray template, for the panel's own traffic
+      async getEgressTargets() {
+        const msg = await HttpUtil.post("/panel/xray/");
+        if (!msg.success) return;
+        const xray = JSON.parse(msg.obj).xraySetting;
+        const tags = [...(xray.outbounds || []), ...((xray.routing || {}).balancers || [])].map(o => o.tag);
+        this.egressTargets = tags.filter(tag => tag && tag !== 'blocked' && tag !== 'api');
       },
       async getAllSetting() {
         const msg = await HttpUtil.post("/panel/setting/all");
@@ -586,6 +595,7 @@
     },
     async mounted() {
       await this.getAllSetting();
+      this.getEgressTargets();
 
       while (true) {
         await PromiseUtil.sleep(1000);

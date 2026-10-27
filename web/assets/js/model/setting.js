@@ -36,6 +36,7 @@ class AllSetting {
         this.externalTrafficInformEnable = false;
         this.externalTrafficInformURI = "";
         this.ipLimitAllowlist = "";
+        this.panelOutbound = "";
         this.subCertFile = "";
         this.subKeyFile = "";
         this.subUpdates = 12;

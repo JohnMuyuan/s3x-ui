@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"embed"
 	"encoding/base64"
@@ -172,7 +173,10 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 
 func (t *Tgbot) NewBot(token string, proxyUrl string, apiServerUrl string) (*telego.Bot, error) {
 	if proxyUrl == "" && apiServerUrl == "" {
-		return telego.NewBot(token)
+		// without a proxy of its own, the bot goes the way of the panel's requests
+		return telego.NewBot(token, telego.WithFastHTTPClient(&fasthttp.Client{
+			Dial: func(addr string) (net.Conn, error) { return PanelDial(context.Background(), "tcp", addr) },
+		}))
 	}
 
 	if proxyUrl != "" {

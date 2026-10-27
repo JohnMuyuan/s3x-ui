@@ -54,6 +54,7 @@ type AllSetting struct {
 	ExternalTrafficInformEnable bool   `json:"externalTrafficInformEnable" form:"externalTrafficInformEnable"`
 	ExternalTrafficInformURI    string `json:"externalTrafficInformURI" form:"externalTrafficInformURI"`
 	IpLimitAllowlist            string `json:"ipLimitAllowlist" form:"ipLimitAllowlist"`
+	PanelOutbound               string `json:"panelOutbound" form:"panelOutbound"`
 	SubEncrypt                  bool   `json:"subEncrypt" form:"subEncrypt"`
 	SubShowInfo                 bool   `json:"subShowInfo" form:"subShowInfo"`
 	SubURI                      string `json:"subURI" form:"subURI"`

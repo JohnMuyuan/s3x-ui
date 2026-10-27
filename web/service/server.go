@@ -289,7 +289,7 @@ func (s *ServerService) GetXrayVersions() ([]string, error) {
 		bufferSize = 8192
 	)
 
-	resp, err := http.Get(XrayURL)
+	resp, err := PanelHTTPClient(30 * time.Second).Get(XrayURL)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +375,7 @@ func (s *ServerService) downloadXRay(version string) (string, error) {
 
 	fileName := fmt.Sprintf("Xray-%s-%s.zip", osName, arch)
 	url := fmt.Sprintf("https://github.com/XTLS/Xray-core/releases/download/%s/%s", version, fileName)
-	resp, err := http.Get(url)
+	resp, err := PanelHTTPClient(10 * time.Minute).Get(url)
 	if err != nil {
 		return "", err
 	}
@@ -638,7 +638,7 @@ func (s *ServerService) UpdateGeofile(fileName string) error {
 	}
 
 	downloadFile := func(url, destPath string) error {
-		resp, err := http.Get(url)
+		resp, err := PanelHTTPClient(10 * time.Minute).Get(url)
 		if err != nil {
 			return common.NewErrorf("Failed to download Geofile from %s: %v", url, err)
 		}

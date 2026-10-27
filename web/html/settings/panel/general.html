@@ -75,6 +75,16 @@
                 </a-select>
             </template>
         </a-setting-list-item>
+        <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.panelOutbound" }}</template>
+            <template #description>{{ i18n "pages.settings.panelOutboundDesc" }}</template>
+            <template #control>
+                <a-select v-model="allSetting.panelOutbound" :style="{ width: '100%' }" :dropdown-class-name="themeSwitcher.currentTheme">
+                    <a-select-option value="">{{ i18n "pages.settings.panelOutboundDirect" }}</a-select-option>
+                    <a-select-option v-for="tag in egressTargets" :key="tag" :value="tag">[[ tag ]]</a-select-option>
+                </a-select>
+            </template>
+        </a-setting-list-item>
     </a-collapse-panel>
     <a-collapse-panel key="2" header='{{ i18n "pages.settings.notifications" }}'>
         <a-setting-list-item paddings="small">

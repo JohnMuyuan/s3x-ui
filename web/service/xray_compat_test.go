@@ -1,6 +1,8 @@
 package service
 
 import (
+	"x-ui/xray"
+
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -135,5 +137,37 @@ func TestWithUserOnline(t *testing.T) {
 	json.Unmarshal(withUserOnline([]byte(`{}`)), &got)
 	if got["levels"].(map[string]any)["0"].(map[string]any)["statsUserOnline"] != true {
 		t.Errorf("an empty policy gets no level 0: %v", got)
+	}
+}
+
+func TestInjectPanelEgress(t *testing.T) {
+	newConfig := func() *xray.Config {
+		return &xray.Config{
+			OutboundConfigs: []byte(`[{"tag":"direct","protocol":"freedom"},{"tag":"warp","protocol":"wireguard"}]`),
+			RouterConfig:    []byte(`{"rules":[{"type":"field","outboundTag":"blocked","ip":["geoip:private"]}],"balancers":[{"tag":"lb","selector":["warp"]}]}`),
+		}
+	}
+	firstRule := func(cfg *xray.Config) map[string]any {
+		var routing struct{ Rules []map[string]any }
+		json.Unmarshal(cfg.RouterConfig, &routing)
+		return routing.Rules[0]
+	}
+	cfg := newConfig()
+	injectPanelEgress(cfg, "warp")
+	if len(cfg.InboundConfigs) != 1 || cfg.InboundConfigs[0].Tag != PanelEgressTag || string(cfg.InboundConfigs[0].Listen) != `"127.0.0.1"` {
+		t.Fatalf("bridge inbound: %+v", cfg.InboundConfigs)
+	}
+	if rule := firstRule(cfg); rule["outboundTag"] != "warp" {
+		t.Errorf("the egress rule must come before the private-IP block: %v", rule)
+	}
+	cfg = newConfig()
+	injectPanelEgress(cfg, "lb")
+	if rule := firstRule(cfg); rule["balancerTag"] != "lb" {
+		t.Errorf("balancer target: %v", rule)
+	}
+	cfg = newConfig()
+	injectPanelEgress(cfg, "gone")
+	if len(cfg.InboundConfigs) != 0 || firstRule(cfg)["outboundTag"] != "blocked" {
+		t.Errorf("an unknown target must leave the config alone")
 	}
 }
