@@ -81,6 +81,8 @@
         <a-form-item label=" ">
           <a-button type="primary" icon="import" @click="setDefaultCertData(index)">
             {{ i18n "pages.inbounds.setDefaultCert" }}</a-button>
+          <a-button icon="safety-certificate" @click="setSelfSignedCert(index)">
+            {{ i18n "pages.inbounds.setSelfSignedCert" }}</a-button>
         </a-form-item>
       </template>
       <template v-else>

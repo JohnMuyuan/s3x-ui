@@ -10,7 +10,7 @@
 
     <a-form-item label='{{ i18n "protocol" }}'>
         <a-select v-model="inbound.protocol" :disabled="isEdit" :dropdown-class-name="themeSwitcher.currentTheme"
-            :dropdown-menu-style="{ maxHeight: '600px' }">
+            :dropdown-menu-style="{ maxHeight: '600px' }" @change="protocolChange">
             <a-select-opt-group label="Xray">
                 <a-select-option v-for="p in Object.values(Protocols).filter(p => !isSingboxProtocol(p))" :key="p" :value="p">[[ p ]]</a-select-option>
             </a-select-opt-group>

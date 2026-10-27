@@ -216,6 +216,8 @@
 "IPLimitlogDesc" = "سجل تاريخ الـ IPs. (عشان تفعل الإدخال بعد التعطيل، امسح السجل)"
 "IPLimitlogclear" = "امسح السجل"
 "setDefaultCert" = "استخدم شهادة البانل"
+"setSelfSignedCert" = "Self-signed Cert"
+"naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "ادخل ID شات Telegram. (استخدم '/id' في البوت) أو (@userinfobot)"
 "subscriptionDesc" = "عشان تلاقي رابط الاشتراك، ادخل على 'التفاصيل'. وكمان ممكن تستخدم نفس الاسم لعدة عملاء."
 "info" = "معلومات"
@@ -260,6 +262,7 @@
 "resetInboundClientTrafficSuccess" = "تم إعادة تعيين حركة المرور"
 "trafficGetError" = "خطأ في الحصول على حركات المرور"
 "getNewX25519CertError" = "حدث خطأ أثناء الحصول على شهادة X25519."
+"getSelfSignedCertError" = "Error while creating the self-signed certificate."
 
 [pages.inbounds.stream.general]
 "request" = "طلب"

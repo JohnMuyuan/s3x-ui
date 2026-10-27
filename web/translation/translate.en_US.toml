@@ -214,6 +214,8 @@
 "IPLimitlogDesc" = "The IPs history log. (to enable inbound after disabling, clear the log)"
 "IPLimitlogclear" = "Clear The Log"
 "setDefaultCert" = "Set Cert from Panel"
+"setSelfSignedCert" = "Self-signed Cert"
+"naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "Please provide Telegram Chat ID. (use '/id' command in the bot) or (@userinfobot)"
 "subscriptionDesc" = "To find your subscription URL, navigate to the 'Details'. Additionally, you can use the same name for several clients."
 "info" = "Info"
@@ -258,6 +260,7 @@
 "resetInboundClientTrafficSuccess" = "Traffic has been reset."
 "trafficGetError" = "Error getting traffics."
 "getNewX25519CertError" = "Error while obtaining the X25519 certificate."
+"getSelfSignedCertError" = "Error while creating the self-signed certificate."
 
 
 [pages.inbounds.stream.general]

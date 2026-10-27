@@ -218,6 +218,8 @@
 "IPLimitlogDesc" = "Лог IP-адресов (перед включением лога IP-адресов, вы должны очистить лог)"
 "IPLimitlogclear" = "Очистить лог"
 "setDefaultCert" = "Установить сертификат панели"
+"setSelfSignedCert" = "Self-signed Cert"
+"naiveNeedsRealCert" = "Naive clients reject self-signed certificates. Issue a domain certificate first (run x-ui on the server, SSL Certificate Management; saved under /root/cert/<domain>/) and enter its paths below."
 "telegramDesc" = "Пожалуйста, укажите Chat ID Telegram. (используйте команду '/id' в боте) или (@userinfobot)"
 "subscriptionDesc" = "Вы можете найти свою ссылку подписки в разделе 'Подробнее'"
 "info" = "Информация"
@@ -262,6 +264,7 @@
 "resetInboundClientTrafficSuccess" = "Трафик сброшен"
 "trafficGetError" = "Ошибка получения данных о трафике"
 "getNewX25519CertError" = "Ошибка при получении сертификата X25519."
+"getSelfSignedCertError" = "Error while creating the self-signed certificate."
 
 [pages.inbounds.stream.general]
 "request" = "Запрос"

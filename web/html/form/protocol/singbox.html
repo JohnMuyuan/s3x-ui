@@ -1,4 +1,6 @@
 {{define "form/singbox"}}
+<a-alert v-if="inbound.protocol === Protocols.NAIVE" type="warning" show-icon :style="{ marginBottom: '10px' }"
+  message='{{ i18n "pages.inbounds.naiveNeedsRealCert" }}'></a-alert>
 <a-collapse activeKey="0" v-for="(client, index) in inbound.settings.clients.slice(0,1)" v-if="!isEdit">
   <a-collapse-panel header='{{ i18n "pages.inbounds.client" }}'>
     {{template "form/client"}}

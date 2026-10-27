@@ -50,6 +50,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getDb", a.getDb)
 	g.POST("/importDB", a.importDB)
 	g.POST("/getNewX25519Cert", a.getNewX25519Cert)
+	g.POST("/getSelfSignedCert", a.getSelfSignedCert)
 }
 
 func (a *ServerController) refreshStatus() {
@@ -188,6 +189,15 @@ func (a *ServerController) importDB(c *gin.Context) {
 		return
 	}
 	jsonObj(c, I18nWeb(c, "pages.index.importDatabaseSuccess"), nil)
+}
+
+func (a *ServerController) getSelfSignedCert(c *gin.Context) {
+	cert, err := a.serverService.GetSelfSignedCert()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.getSelfSignedCertError"), err)
+		return
+	}
+	jsonObj(c, cert, nil)
 }
 
 func (a *ServerController) getNewX25519Cert(c *gin.Context) {

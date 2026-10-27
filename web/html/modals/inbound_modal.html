@@ -128,6 +128,29 @@
                     }
                 }
             },
+            // TLS-only sing-box protocols get the self-signed certificate on
+            // creation, so a new inbound works without touching certificates.
+            protocolChange(protocol) {
+                this.$nextTick(() => {
+                    const tls = inModal.inbound.stream.tls;
+                    if (!this.isEdit && SINGBOX_TLS_PROTOCOLS.includes(protocol) && tls.certs.length > 0
+                        && !tls.certs[0].certFile && !tls.certs[0].cert) {
+                        this.setSelfSignedCert(0);
+                    }
+                });
+            },
+            async setSelfSignedCert(index) {
+                const msg = await HttpUtil.post('/server/getSelfSignedCert');
+                if (!msg.success) {
+                    return;
+                }
+                const tls = inModal.inbound.stream.tls;
+                tls.certs[index].useFile = true;
+                tls.certs[index].certFile = msg.obj.certFile;
+                tls.certs[index].keyFile = msg.obj.keyFile;
+                tls.sni = msg.obj.serverName;
+                tls.settings.allowInsecure = true;
+            },
             setDefaultCertData(index) {
                 inModal.inbound.stream.tls.certs[index].certFile = app.defaultCert;
                 inModal.inbound.stream.tls.certs[index].keyFile = app.defaultKey;
