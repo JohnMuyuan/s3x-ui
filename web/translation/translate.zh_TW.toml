@@ -476,6 +476,7 @@
 "useComma" = "逗號分隔的項目"
 
 [pages.xray.outbound]
+"pinnedCertDesc" = "Xray 26 已取消「允許不安全」。自簽憑證請填寫對方憑證的 SHA-256（十六進位，多個用逗號分隔），即可略過 CA 驗證。"
 "addOutbound" = "新增出站"
 "addReverse" = "新增反向"
 "editOutbound" = "編輯出站"

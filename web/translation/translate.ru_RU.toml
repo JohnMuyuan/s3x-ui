@@ -474,6 +474,7 @@
 "useComma" = "Элементы, разделённые запятыми"
 
 [pages.xray.outbound]
+"pinnedCertDesc" = "Xray 26 removed Allow Insecure. For a self-signed server, enter its certificate's SHA-256 (hex, comma separated) to trust it without a CA."
 "addOutbound" = "Создать аутбаунд"
 "addReverse" = "Создать реверс-прокси"
 "editOutbound" = "Изменить аутбаунд"

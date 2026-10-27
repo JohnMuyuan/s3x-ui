@@ -474,6 +474,7 @@
 "useComma" = "Các mục được phân tách bằng dấu phẩy"
 
 [pages.xray.outbound]
+"pinnedCertDesc" = "Xray 26 removed Allow Insecure. For a self-signed server, enter its certificate's SHA-256 (hex, comma separated) to trust it without a CA."
 "addOutbound" = "Thêm thư đi"
 "addReverse" = "Thêm đảo ngược"
 "editOutbound" = "Chỉnh sửa gửi đi"

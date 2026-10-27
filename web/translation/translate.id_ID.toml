@@ -475,6 +475,7 @@
 "useComma" = "Item yang dipisahkan koma"
 
 [pages.xray.outbound]
+"pinnedCertDesc" = "Xray 26 removed Allow Insecure. For a self-signed server, enter its certificate's SHA-256 (hex, comma separated) to trust it without a CA."
 "addOutbound" = "Tambahkan Keluar"
 "addReverse" = "Tambahkan Revers"
 "editOutbound" = "Edit Keluar"

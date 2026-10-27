@@ -474,6 +474,7 @@
 "useComma" = "逗号分隔的项目"
 
 [pages.xray.outbound]
+"pinnedCertDesc" = "Xray 26 已取消“允许不安全”。自签证书请填写对方证书的 SHA-256（十六进制，多个用逗号分隔），即可跳过 CA 校验。"
 "addOutbound" = "添加出站"
 "addReverse" = "添加反向"
 "editOutbound" = "编辑出站"

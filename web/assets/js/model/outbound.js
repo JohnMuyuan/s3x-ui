@@ -354,13 +354,17 @@ class TlsStreamSettings extends CommonClass {
         serverName = '',
         alpn = [],
         fingerprint = '',
-        allowInsecure = false
+        pinnedPeerCertSha256 = '',
+        verifyPeerCertByName = '',
     ) {
         super();
         this.serverName = serverName;
         this.alpn = alpn;
         this.fingerprint = fingerprint;
-        this.allowInsecure = allowInsecure;
+        // Xray 26 replaced allowInsecure: trust a certificate by its SHA-256
+        // (comma separated, hex), or verify it against other names.
+        this.pinnedPeerCertSha256 = pinnedPeerCertSha256;
+        this.verifyPeerCertByName = verifyPeerCertByName;
     }
 
     static fromJson(json = {}) {
@@ -368,7 +372,8 @@ class TlsStreamSettings extends CommonClass {
             json.serverName,
             json.alpn,
             json.fingerprint,
-            json.allowInsecure,
+            json.pinnedPeerCertSha256,
+            json.verifyPeerCertByName,
         );
     }
 
@@ -377,7 +382,8 @@ class TlsStreamSettings extends CommonClass {
             serverName: this.serverName,
             alpn: this.alpn,
             fingerprint: this.fingerprint,
-            allowInsecure: this.allowInsecure,
+            pinnedPeerCertSha256: this.pinnedPeerCertSha256 || undefined,
+            verifyPeerCertByName: this.verifyPeerCertByName || undefined,
         };
     }
 }
@@ -735,7 +741,8 @@ class Outbound extends CommonClass {
                 json.sni,
                 json.alpn ? json.alpn.split(',') : [],
                 json.fp,
-                json.allowInsecure);
+                json.pcs,
+                json.vcn);
         }
 
         const port = json.port * 1;
@@ -776,9 +783,9 @@ class Outbound extends CommonClass {
         if (security == 'tls') {
             let fp = url.searchParams.get('fp') ?? 'none';
             let alpn = url.searchParams.get('alpn');
-            let allowInsecure = url.searchParams.get('allowInsecure');
             let sni = url.searchParams.get('sni') ?? '';
-            stream.tls = new TlsStreamSettings(sni, alpn ? alpn.split(',') : [], fp, allowInsecure == 1);
+            stream.tls = new TlsStreamSettings(sni, alpn ? alpn.split(',') : [], fp,
+                url.searchParams.get('pcs') ?? '', url.searchParams.get('vcn') ?? '');
         }
 
         if (security == 'reality') {

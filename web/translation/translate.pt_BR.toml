@@ -474,6 +474,7 @@
 "useComma" = "Itens separados por vírgula"
 
 [pages.xray.outbound]
+"pinnedCertDesc" = "Xray 26 removed Allow Insecure. For a self-signed server, enter its certificate's SHA-256 (hex, comma separated) to trust it without a CA."
 "addOutbound" = "Adicionar Saída"
 "addReverse" = "Adicionar Reverso"
 "editOutbound" = "Editar Saída"
