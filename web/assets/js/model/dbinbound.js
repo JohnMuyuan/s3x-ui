@@ -130,6 +130,7 @@ class DBInbound {
     }
 
     hasLink() {
+        if (this.toInbound().network === 'xdrive') return false;
         switch (this.protocol) {
             case Protocols.VMESS:
             case Protocols.VLESS:

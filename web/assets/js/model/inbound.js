@@ -924,6 +924,54 @@ class SockoptStreamSettings extends XrayCommonClass {
     }
 }
 
+// XDRIVE carries traffic through shared storage: Google Drive (ClientID,
+// ClientSecret and RefreshToken as secrets), a service described by a
+// template, or a local folder. Tuning knobs left at 0 take Xray's defaults.
+class XDriveStreamSettings extends XrayCommonClass {
+    constructor(service = 'google-drive', remoteFolder = '', secrets = ['', '', ''], segmentBytes = 0,
+        flushIntervalMs = 0, pollIntervalMs = 0, sessionTtlSeconds = 0, concurrency = 0, template = undefined) {
+        super();
+        this.service = service;
+        this.remoteFolder = remoteFolder;
+        this.secrets = secrets;
+        this.segmentBytes = segmentBytes;
+        this.flushIntervalMs = flushIntervalMs;
+        this.pollIntervalMs = pollIntervalMs;
+        this.sessionTtlSeconds = sessionTtlSeconds;
+        this.concurrency = concurrency;
+        this.templateText = template ? JSON.stringify(template, null, 2) : '';
+    }
+
+    get template() {
+        try {
+            return this.templateText.trim() ? JSON.parse(this.templateText) : undefined;
+        } catch (e) {
+            return undefined;
+        }
+    }
+
+    static fromJson(json = {}) {
+        const secrets = Array.isArray(json.secrets) ? json.secrets : [];
+        return new XDriveStreamSettings(
+            json.service === 'Google Drive' ? 'google-drive' : json.service,
+            json.remoteFolder,
+            [0, 1, 2].map(i => secrets[i] || ''),
+            json.segmentBytes, json.flushIntervalMs, json.pollIntervalMs, json.sessionTtlSeconds, json.concurrency,
+            json.template,
+        );
+    }
+
+    toJson() {
+        const json = { service: this.service, remoteFolder: this.remoteFolder };
+        if (this.service === 'google-drive') json.secrets = this.secrets;
+        if (this.service === 'template') json.template = this.template;
+        for (const key of ['segmentBytes', 'flushIntervalMs', 'pollIntervalMs', 'sessionTtlSeconds', 'concurrency']) {
+            if (this[key] > 0) json[key] = this[key];
+        }
+        return json;
+    }
+}
+
 // MASQUE (CONNECT-IP over HTTP/3). A server reads only the path; empty means
 // Xray's default, /.well-known/masque/ip/*/*/.
 class MasqueStreamSettings extends XrayCommonClass {
@@ -956,6 +1004,7 @@ class StreamSettings extends XrayCommonClass {
         sockopt = undefined,
         masqueSettings = new MasqueStreamSettings(),
         finalmask = undefined,
+        xdriveSettings = new XDriveStreamSettings(),
     ) {
         super();
         this.network = network;
@@ -971,6 +1020,7 @@ class StreamSettings extends XrayCommonClass {
         this.xhttp = xhttpSettings;
         this.sockopt = sockopt;
         this.masque = masqueSettings;
+        this.xdrive = xdriveSettings;
         // FinalMask, Xray's last-layer obfuscation, is edited as JSON: it has a
         // dozen mask types with deeply nested settings.
         this.finalmaskText = finalmask ? JSON.stringify(finalmask, null, 2) : '';
@@ -1066,6 +1116,7 @@ class StreamSettings extends XrayCommonClass {
             SockoptStreamSettings.fromJson(json.sockopt),
             MasqueStreamSettings.fromJson(json.masqueSettings),
             json.finalmask,
+            XDriveStreamSettings.fromJson(json.xdriveSettings),
         );
     }
 
@@ -1084,6 +1135,7 @@ class StreamSettings extends XrayCommonClass {
             httpupgradeSettings: network === 'httpupgrade' ? this.httpupgrade.toJson() : undefined,
             xhttpSettings: network === 'xhttp' ? this.xhttp.toJson() : undefined,
             masqueSettings: network === 'masque' ? this.masque.toJson() : undefined,
+            xdriveSettings: network === 'xdrive' ? this.xdrive.toJson() : undefined,
             sockopt: this.sockopt != undefined ? this.sockopt.toJson() : undefined,
             finalmask: this.finalmask,
         };
@@ -1324,8 +1376,8 @@ class Inbound extends XrayCommonClass {
     //this is used for xtls-rprx-vision
     canEnableTlsFlow() {
         if (this.protocol === Protocols.VLESS && this.settings.encryptionEnabled) {
-            // VLESS encryption carries Vision on any transport.
-            return true;
+            // VLESS encryption carries Vision on any transport but XDRIVE.
+            return this.network !== 'xdrive';
         }
         if (((this.stream.security === 'tls') || (this.stream.security === 'reality')) && (this.network === "tcp")) {
             return this.protocol === Protocols.VLESS;
@@ -1735,6 +1787,8 @@ class Inbound extends XrayCommonClass {
     }
 
     genLink(address = '', port = this.port, forceTls = 'same', remark = '', client) {
+        // XDRIVE has no link format, and one would hand out its storage secrets.
+        if (this.network === 'xdrive') return '';
         switch (this.protocol) {
             case Protocols.VMESS:
                 return this.genVmessLink(address, port, forceTls, remark, client.id, client.security);

@@ -227,6 +227,8 @@
 "masqueAddressDesc" = "用戶端隧道位址從這些網段分配，最多一個 IPv4 和一個 IPv6。"
 "tunWarning" = "TUN 會在伺服器上建立虛擬網卡。填寫「Auto Routes」會把伺服器自身的流量導入 TUN，可能導致 SSH 斷線，不清楚用途請留空。"
 "finalmaskDesc" = "Xray 最外層的流量偽裝（如 UDP 的 Salamander 混淆、依來源 IP 過濾）。兩端需一致，分享連結會以 fm 參數帶給用戶端（伺服器專用的 IP 過濾除外）。需要 Xray 26 以上的用戶端。"
+"xdriveDesc" = "XDRIVE 透過雲端硬碟中轉流量：伺服器與用戶端讀寫同一個資料夾，不直接建立連線，可穿透只放行雲端硬碟的網路。Google Drive 需要 OAuth 的 Client ID、Client Secret 與 Refresh Token。為了安全不產生分享連結（會洩露雲端憑證），請手動設定用戶端。"
+"xdriveNeedsEncryption" = "XDRIVE 必須開啟 VLESS 加密"
 "naiveNeedsRealCert" = "Naive 用戶端不接受自簽憑證。請先在伺服器上執行 x-ui，選「SSL Certificate Management」申請網域憑證（儲存在 /root/cert/網域/），再把憑證和私鑰路徑填到下方。"
 "telegramDesc" = "請提供Telegram聊天ID。（在機器人中使用'/id'命令）或（@userinfobot"
 "subscriptionDesc" = "要找到你的訂閱 URL，請導航到“詳細資訊”。此外，你可以為多個客戶端使用相同的名稱。"

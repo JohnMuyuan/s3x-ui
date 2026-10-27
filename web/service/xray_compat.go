@@ -2,7 +2,9 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 
+	"x-ui/database/model"
 	"x-ui/logger"
 	"x-ui/util/json_util"
 )
@@ -42,6 +44,29 @@ func dropAllowInsecure(outbounds json_util.RawMessage) json_util.RawMessage {
 		return outbounds
 	}
 	return out
+}
+
+// unrunnable names inbounds Xray would refuse, which would stop every other
+// inbound with them: XDRIVE only runs as VLESS with encryption.
+func unrunnable(inbound *model.Inbound) error {
+	var stream struct {
+		Network string `json:"network"`
+	}
+	json.Unmarshal([]byte(inbound.StreamSettings), &stream)
+	if stream.Network != "xdrive" {
+		return nil
+	}
+	if inbound.Protocol != model.VLESS {
+		return fmt.Errorf("inbound %s: XDRIVE can only be used by VLESS", inbound.Tag)
+	}
+	var settings struct {
+		Decryption string `json:"decryption"`
+	}
+	json.Unmarshal([]byte(inbound.Settings), &settings)
+	if settings.Decryption == "" || settings.Decryption == "none" {
+		return fmt.Errorf("inbound %s: XDRIVE needs VLESS encryption", inbound.Tag)
+	}
+	return nil
 }
 
 // kcpHeaderMask maps 3x-ui's mKCP header types to Xray's mkcp-legacy names.

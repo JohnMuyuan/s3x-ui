@@ -97,3 +97,25 @@ func TestXrayInboundConfig(t *testing.T) {
 		t.Errorf("MASQUE clients = %v, want %v", settings["clients"], want)
 	}
 }
+
+func TestUnrunnableXDrive(t *testing.T) {
+	xdrive := `{"network":"xdrive","xdriveSettings":{"service":"local"}}`
+	tests := []struct {
+		name     string
+		inbound  model.Inbound
+		runnable bool
+	}{
+		{"vless with encryption", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"mlkem768x25519plus.native.600s.k"}`, StreamSettings: xdrive}, true},
+		{"vless without encryption", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"none"}`, StreamSettings: xdrive}, false},
+		{"vmess", model.Inbound{Protocol: model.VMESS, Settings: `{}`, StreamSettings: xdrive}, false},
+		{"not xdrive", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"none"}`, StreamSettings: `{"network":"tcp"}`}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := XrayInboundConfig(&tt.inbound)
+			if (err == nil) != tt.runnable {
+				t.Fatalf("err = %v, want runnable %v", err, tt.runnable)
+			}
+		})
+	}
+}

@@ -22,6 +22,10 @@
                 Vue.prototype.$message.error('FinalMask: invalid JSON');
                 return;
             }
+            if (inModal.inbound.network === 'xdrive' && !inModal.inbound.settings.encryptionEnabled) {
+                Vue.prototype.$message.error('{{ i18n "pages.inbounds.xdriveNeedsEncryption" }}');
+                return;
+            }
             ObjectUtil.execute(inModal.confirm, inModal.inbound, inModal.dbInbound);
         },
         show({ title = '', okText = '{{ i18n "sure" }}', inbound = null, dbInbound = null, confirm = (inbound, dbInbound) => {}, isEdit = false }) {
@@ -95,6 +99,10 @@
         },
         methods: {
             streamNetworkChange() {
+                // XDRIVE runs only inside VLESS encryption.
+                if (inModal.inbound.network === 'xdrive' && !inModal.inbound.settings.encryptionEnabled) {
+                    this.setVlessEnc('mlkem768', 'native');
+                }
                 if (!inModal.inbound.canEnableTls()) {
                     this.inModal.inbound.stream.security = 'none';
                 }

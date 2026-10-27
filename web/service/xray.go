@@ -93,7 +93,9 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		}
 		inboundConfig, err := XrayInboundConfig(inbound)
 		if err != nil {
-			return nil, err
+			// One inbound Xray refuses must not stop all the others.
+			logger.Warning("skipping inbound:", err)
+			continue
 		}
 		xrayConfig.InboundConfigs = append(xrayConfig.InboundConfigs, *inboundConfig)
 	}
@@ -203,6 +205,9 @@ func (s *XrayService) IsNeedRestartAndSetFalse() bool {
 // rewritten for Xray 26. Both the full config and the API hot-add paths use
 // it; the inbound itself is left untouched.
 func XrayInboundConfig(stored *model.Inbound) (*xray.InboundConfig, error) {
+	if err := unrunnable(stored); err != nil {
+		return nil, err
+	}
 	copied := *stored
 	inbound := &copied
 	// get settings clients
