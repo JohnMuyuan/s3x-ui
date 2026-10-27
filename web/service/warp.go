@@ -98,12 +98,13 @@ func (s *WarpService) RegWarp(secretKey string, publicKey string) (string, error
 		return "", err
 	}
 
-	deviceId := rspData["id"].(string)
-	token := rspData["token"].(string)
-	license, ok := rspData["account"].(map[string]any)["license"].(string)
-	if !ok {
-		logger.Debug("Error accessing license value.")
-		return "", err
+	deviceId, _ := rspData["id"].(string)
+	token, _ := rspData["token"].(string)
+	account, _ := rspData["account"].(map[string]any)
+	license, _ := account["license"].(string)
+	if deviceId == "" || token == "" || license == "" {
+		logger.Debug("WARP registration refused:", buffer.String())
+		return "", common.NewErrorf("WARP registration refused (HTTP %d)", resp.StatusCode)
 	}
 
 	warpData := fmt.Sprintf("{\n  \"access_token\": \"%s\",\n  \"device_id\": \"%s\",", token, deviceId)

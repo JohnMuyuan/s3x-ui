@@ -523,6 +523,15 @@
 "entries" = "條"
 "first" = "顯示前"
 
+[pages.xray.warp]
+"rotation" = "IP 輪換"
+"exit" = "出口 IP"
+"exitUnknown" = "未知（出站未執行）"
+"rotate" = "立即更換 IP"
+"interval" = "自動更換間隔（小時）"
+"intervalDesc" = "每隔這麼多小時註冊一個新的 WARP 裝置來更換出口 IP，WARP+ 授權會轉到新裝置。更換時 Xray 會重啟，現有連線會中斷。0 表示關閉。"
+"lastRotation" = "上次更換"
+
 [pages.xray.outbound]
 "down" = "不通"
 "test" = "測延遲"

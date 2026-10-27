@@ -16,6 +16,9 @@ func (s *XraySettingService) SaveXraySetting(newXraySettings string) error {
 	if err := s.CheckXrayConfig(newXraySettings); err != nil {
 		return err
 	}
+	stored, _ := s.SettingService.GetXrayConfigTemplate()
+	warp, _ := s.SettingService.GetWarp()
+	newXraySettings = keepCurrentWarp(newXraySettings, stored, warp)
 	return s.SettingService.saveSetting("xrayTemplateConfig", newXraySettings)
 }
 

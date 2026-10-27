@@ -299,6 +299,7 @@ func (s *Server) startTask() {
 	s.cron.AddJob("@every 1m", job.NewTrafficResetJob())
 	s.cron.AddJob("@every 1m", job.NewOutboundMonitorJob())
 	s.cron.AddJob("@every 10m", job.NewOutboundSubJob())
+	s.cron.AddJob("@every 10m", job.NewWarpRotateJob())
 
 	// Make a traffic condition every day, 8:30
 	var entry cron.EntryID

@@ -71,6 +71,8 @@ var defaultValueMap = map[string]string{
 	"subJsonRules":                "",
 	"datepicker":                  "gregorian",
 	"warp":                        "",
+	"warpRotateInterval":          "0",
+	"warpRotatedAt":               "0",
 	"externalTrafficInformEnable": "false",
 	"externalTrafficInformURI":    "",
 	"ipLimitAllowlist":            "",
@@ -524,6 +526,26 @@ func (s *SettingService) GetWarp() (string, error) {
 
 func (s *SettingService) SetWarp(data string) error {
 	return s.setString("warp", data)
+}
+
+func (s *SettingService) GetWarpRotateInterval() (int, error) {
+	return s.getInt("warpRotateInterval")
+}
+
+func (s *SettingService) SetWarpRotateInterval(hours int) error {
+	return s.setInt("warpRotateInterval", hours)
+}
+
+func (s *SettingService) GetWarpRotatedAt() (int64, error) {
+	v, err := s.getString("warpRotatedAt")
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(v, 10, 64)
+}
+
+func (s *SettingService) SetWarpRotatedAt(ms int64) error {
+	return s.setString("warpRotatedAt", strconv.FormatInt(ms, 10))
 }
 
 func (s *SettingService) GetExternalTrafficInformEnable() (bool, error) {

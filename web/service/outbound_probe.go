@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -155,25 +156,15 @@ func ProbeOutbound(tag, testURL string, speed bool) *OutboundProbeResult {
 		outboundStatus.m[tag] = &copied
 		outboundStatus.Unlock()
 	}()
-	found := false
-	for _, t := range ProbeableOutbounds() {
-		found = found || t == tag
-	}
-	if !found {
-		res.Error = "not in the running Xray: save the outbounds first"
+	client, err := probeClient(tag)
+	if err != nil {
+		res.Error = err.Error()
 		return res
 	}
+	defer client.CloseIdleConnections()
 	if testURL == "" {
 		testURL = DefaultOutboundTestURL
 	}
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(&url.URL{Scheme: "socks5", Host: fmt.Sprintf("127.0.0.1:%d", outboundProbePort),
-			User: url.UserPassword(OutboundProbeUser+tag, outboundProbePassword)}),
-		MaxIdleConnsPerHost: 1,
-	}
-	defer transport.CloseIdleConnections()
-	client := &http.Client{Transport: transport, Timeout: outboundProbeTimeout,
-		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 
 	delay := -1
 	for i := 0; i < 2; i++ {
@@ -218,6 +209,21 @@ func ProbeOutbound(tag, testURL string, speed bool) *OutboundProbeResult {
 		}
 	}
 	return res
+}
+
+// probeClient is an HTTP client whose requests leave through an outbound of
+// the running Xray.
+func probeClient(tag string) (*http.Client, error) {
+	if !slices.Contains(ProbeableOutbounds(), tag) {
+		return nil, errors.New("not in the running Xray: save the outbounds first")
+	}
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(&url.URL{Scheme: "socks5", Host: fmt.Sprintf("127.0.0.1:%d", outboundProbePort),
+			User: url.UserPassword(OutboundProbeUser+tag, outboundProbePassword)}),
+		MaxIdleConnsPerHost: 1,
+	}
+	return &http.Client{Transport: transport, Timeout: outboundProbeTimeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, nil
 }
 
 func shortError(err error) string {

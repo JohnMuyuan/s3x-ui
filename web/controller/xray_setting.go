@@ -175,6 +175,20 @@ func (a *XraySettingController) warp(c *gin.Context) {
 	case "license":
 		license := c.PostForm("license")
 		resp, err = a.WarpService.SetWarpLicense(license)
+	case "rotation":
+		jsonObj(c, a.WarpService.RotationInfo(), nil)
+		return
+	case "rotate":
+		rotation, err := a.WarpService.Rotate()
+		jsonObj(c, rotation, err)
+		return
+	case "rotateInterval":
+		hours, err := strconv.Atoi(c.PostForm("hours"))
+		if err == nil {
+			err = a.WarpService.SetWarpRotateInterval(max(hours, 0))
+		}
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+		return
 	}
 
 	jsonObj(c, resp, err)

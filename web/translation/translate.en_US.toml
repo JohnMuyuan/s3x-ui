@@ -518,6 +518,15 @@
 "entries" = "entries"
 "first" = "showing the first"
 
+[pages.xray.warp]
+"rotation" = "IP Rotation"
+"exit" = "Exit IP"
+"exitUnknown" = "unknown (outbound not running)"
+"rotate" = "Rotate IP now"
+"interval" = "Rotate every (hours)"
+"intervalDesc" = "Registers a new WARP device this often for a new exit IP; a WARP+ license moves to it. Xray restarts to use it, which drops open connections. 0 turns it off."
+"lastRotation" = "Last rotation"
+
 [pages.xray.outbound]
 "down" = "Down"
 "test" = "Test delay"
