@@ -173,3 +173,36 @@ func TestInjectPanelEgress(t *testing.T) {
 		t.Errorf("an unknown target must leave the config alone")
 	}
 }
+
+func TestInjectOutboundProbe(t *testing.T) {
+	cfg := &xray.Config{
+		OutboundConfigs: []byte(`[{"tag":"direct","protocol":"freedom"},{"tag":"blocked","protocol":"blackhole"},{"tag":"warp","protocol":"wireguard"},{"protocol":"freedom"}]`),
+		RouterConfig:    []byte(`{"rules":[{"type":"field","outboundTag":"blocked","ip":["geoip:private"]}]}`),
+	}
+	injectOutboundProbe(cfg)
+	if len(cfg.InboundConfigs) != 1 || cfg.InboundConfigs[0].Port != outboundProbePort {
+		t.Fatalf("probe inbound: %+v", cfg.InboundConfigs)
+	}
+	var settings struct {
+		Accounts  []struct{ User string }
+		UserLevel int
+	}
+	json.Unmarshal(cfg.InboundConfigs[0].Settings, &settings)
+	if len(settings.Accounts) != 2 || settings.Accounts[0].User != OutboundProbeUser+"direct" || settings.Accounts[1].User != OutboundProbeUser+"warp" {
+		t.Errorf("accounts: %+v", settings.Accounts)
+	}
+	if settings.UserLevel != outboundProbeLevel {
+		t.Errorf("probe users must sit on a level without stats: %d", settings.UserLevel)
+	}
+	var routing struct{ Rules []map[string]any }
+	json.Unmarshal(cfg.RouterConfig, &routing)
+	if len(routing.Rules) != 3 || routing.Rules[0]["outboundTag"] != "direct" || routing.Rules[1]["outboundTag"] != "warp" || routing.Rules[2]["outboundTag"] != "blocked" {
+		t.Errorf("probe rules must come first: %v", routing.Rules)
+	}
+	// a user inbound on the port: leave it alone
+	cfg = &xray.Config{OutboundConfigs: []byte(`[{"tag":"direct","protocol":"freedom"}]`), InboundConfigs: []xray.InboundConfig{{Port: outboundProbePort}}}
+	injectOutboundProbe(cfg)
+	if len(cfg.InboundConfigs) != 1 {
+		t.Error("probe inbound added on a port in use")
+	}
+}

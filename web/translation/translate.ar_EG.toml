@@ -409,6 +409,11 @@
 "panelOutbound" = "Panel Traffic Outbound"
 "panelOutboundDesc" = "The panel's own requests (Telegram bot, GitHub downloads, the WARP API, external subscriptions) leave through this Xray outbound or balancer, for a server whose direct route to them is blocked. Takes effect after a panel restart."
 "panelOutboundDirect" = "Not through Xray"
+"outboundMonitor" = "Outbound Monitor"
+"outboundMonitorDesc" = "Tests every outbound at the interval; one failing twice in a row is reported to the Telegram admins, and again when it is back. The status and speed buttons of the outbound list work without this."
+"outboundMonitorInterval" = "Monitor interval (minutes)"
+"outboundTestUrl" = "Test URL"
+"outboundTestUrlDesc" = "Any HTTP response counts as working; a URL answering 204 is best"
 "fragment" = "تجزئة"
 "fragmentDesc" = "يفعل تجزئة لحزمة TLS hello."
 "fragmentSett" = "إعدادات التجزئة"
@@ -506,6 +511,9 @@
 "useComma" = "عناصر مفصولة بفواصل"
 
 [pages.xray.outbound]
+"down" = "Down"
+"test" = "Test delay"
+"speedTest" = "Speed test"
 "pinnedCertDesc" = "Xray 26 removed Allow Insecure. For a self-signed server, enter its certificate's SHA-256 (hex, comma separated) to trust it without a CA."
 "addOutbound" = "أضف مخرج"
 "addReverse" = "أضف عكسي"
@@ -644,6 +652,8 @@
 
 [tgbot.messages]
 "cpuThreshold" = "🔴 حمل المعالج {{ .Percent }}% عدى الحد المسموح ({{ .Threshold }}%)"
+"outboundDown" = "🔴 Outbound {{ .Tag }} is down: {{ .Error }}"
+"outboundUp" = "🟢 Outbound {{ .Tag }} is back ({{ .Delay }} ms)"
 "selectUserFailed" = "❌ حصل خطأ في اختيار المستخدم!"
 "userSaved" = "✅ حفظت بيانات مستخدم Telegram."
 "loginSuccess" = "✅ تسجيل الدخول للبانل تم بنجاح.\r\n"

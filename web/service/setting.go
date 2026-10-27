@@ -75,6 +75,9 @@ var defaultValueMap = map[string]string{
 	"externalTrafficInformURI":    "",
 	"ipLimitAllowlist":            "",
 	"panelOutbound":               "",
+	"outboundMonitorEnable":       "false",
+	"outboundMonitorInterval":     "5",
+	"outboundTestUrl":             "https://www.gstatic.com/generate_204",
 }
 
 type SettingService struct{}
@@ -543,6 +546,19 @@ func (s *SettingService) SetExternalTrafficInformURI(InformURI string) error {
 // leave through, "" for a direct connection.
 func (s *SettingService) GetPanelOutbound() (string, error) {
 	return s.getString("panelOutbound")
+}
+
+func (s *SettingService) GetOutboundMonitorEnable() (bool, error) {
+	return s.getBool("outboundMonitorEnable")
+}
+
+// GetOutboundMonitorInterval is in minutes.
+func (s *SettingService) GetOutboundMonitorInterval() (int, error) {
+	return s.getInt("outboundMonitorInterval")
+}
+
+func (s *SettingService) GetOutboundTestUrl() (string, error) {
+	return s.getString("outboundTestUrl")
 }
 
 func (s *SettingService) GetIpLimitAllowlist() (string, error) {

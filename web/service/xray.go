@@ -116,6 +116,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if target, err := s.settingService.GetPanelOutbound(); err == nil && target != "" {
 		injectPanelEgress(xrayConfig, target)
 	}
+	injectOutboundProbe(xrayConfig)
 	return xrayConfig, nil
 }
 

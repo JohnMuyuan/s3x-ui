@@ -135,6 +135,28 @@
             </template>
         </a-setting-list-item>
     </a-collapse-panel>
+    <a-collapse-panel key="7" header='{{ i18n "pages.settings.outboundMonitor" }}'>
+        <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.outboundMonitor" }}</template>
+            <template #description>{{ i18n "pages.settings.outboundMonitorDesc" }}</template>
+            <template #control>
+                <a-switch v-model="allSetting.outboundMonitorEnable"></a-switch>
+            </template>
+        </a-setting-list-item>
+        <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.outboundMonitorInterval" }}</template>
+            <template #control>
+                <a-input-number :min="1" v-model="allSetting.outboundMonitorInterval" :style="{ width: '100%' }"></a-input-number>
+            </template>
+        </a-setting-list-item>
+        <a-setting-list-item paddings="small">
+            <template #title>{{ i18n "pages.settings.outboundTestUrl" }}</template>
+            <template #description>{{ i18n "pages.settings.outboundTestUrlDesc" }}</template>
+            <template #control>
+                <a-input v-model.trim="allSetting.outboundTestUrl"></a-input>
+            </template>
+        </a-setting-list-item>
+    </a-collapse-panel>
     <a-collapse-panel key="6" header='{{ i18n "pages.inbounds.IPLimit" }}'>
         <a-setting-list-item paddings="small">
             <template #title>{{ i18n "pages.settings.ipLimitAllowlist" }}</template>

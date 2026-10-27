@@ -37,6 +37,9 @@ class AllSetting {
         this.externalTrafficInformURI = "";
         this.ipLimitAllowlist = "";
         this.panelOutbound = "";
+        this.outboundMonitorEnable = false;
+        this.outboundMonitorInterval = 5;
+        this.outboundTestUrl = "https://www.gstatic.com/generate_204";
         this.subCertFile = "";
         this.subKeyFile = "";
         this.subUpdates = 12;

@@ -23,7 +23,8 @@ import (
 // loopback SOCKS inbound that a routing rule sends to the chosen target.
 const (
 	PanelEgressTag = "panel-egress"
-	// next to Xray's API (62789) and sbcore's API and bridge (62790, 62791)
+	// next to Xray's API (62789), sbcore's API and bridge (62790, 62791) and
+	// the outbound tests (62793)
 	panelEgressPort = 62792
 	panelEgressUser = "panel"
 )

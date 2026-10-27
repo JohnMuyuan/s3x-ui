@@ -218,6 +218,7 @@
     { title: '{{ i18n "protocol"}}', align: 'center', width: 50, scopedSlots: { customRender: 'protocol' } },
     { title: '{{ i18n "pages.xray.outbound.address"}}', align: 'center', width: 50, scopedSlots: { customRender: 'address' } },
     { title: '{{ i18n "pages.inbounds.traffic" }}', align: 'center', width: 50, scopedSlots: { customRender: 'traffic' } },
+    { title: '{{ i18n "status" }}', align: 'center', width: 90, scopedSlots: { customRender: 'status' } },
   ];
 
   const reverseColumns = [
@@ -262,6 +263,8 @@
       xraySetting: '',
       inboundTags: [],
       outboundsTraffic: [],
+      outboundStatus: {},
+      testingOutbound: '',
       saveBtnDisable: true,
       refreshing: false,
       restartResult: '',
@@ -387,6 +390,17 @@
     methods: {
       loading(spinning = true) {
         this.loadingStates.spinning = spinning;
+      },
+      async getOutboundStatus() {
+        const msg = await HttpUtil.post("/panel/xray/outboundStatus");
+        if (msg.success) this.outboundStatus = msg.obj;
+      },
+      // tests the saved outbound in the running Xray
+      async testOutbound(tag, speed) {
+        this.testingOutbound = tag + ':' + speed;
+        const msg = await HttpUtil.post("/panel/xray/testOutbound", { tag, speed });
+        this.testingOutbound = '';
+        if (msg.success) this.$set(this.outboundStatus, tag, msg.obj);
       },
       async getOutboundsTraffic() {
         const msg = await HttpUtil.get("/panel/xray/getOutboundsTraffic");
@@ -999,6 +1013,7 @@
       await this.getXraySetting();
       await this.getXrayResult();
       await this.getOutboundsTraffic();
+      this.getOutboundStatus();
       while (true) {
         await PromiseUtil.sleep(800);
         this.saveBtnDisable = this.oldXraySetting === this.xraySetting;

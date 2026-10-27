@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"slices"
@@ -150,6 +151,9 @@ func (j *CheckClientIpJob) processLogFile() map[string][]string {
 			continue
 		}
 		email := emailMatches[1]
+		if strings.HasPrefix(email, service.OutboundProbeUser) {
+			continue
+		}
 
 		if _, exists := inboundClientIps[email]; !exists {
 			inboundClientIps[email] = make(map[string]struct{})

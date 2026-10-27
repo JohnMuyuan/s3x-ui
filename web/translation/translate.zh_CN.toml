@@ -411,6 +411,11 @@
 "panelOutbound" = "面板流量出站"
 "panelOutboundDesc" = "面板自己的请求（Telegram 机器人、GitHub 下载、WARP 接口、外部订阅拉取）经这个 Xray 出站或负载均衡发出，适合服务器直连这些地址受阻的情况。重启面板后生效。"
 "panelOutboundDirect" = "不经过 Xray"
+"outboundMonitor" = "出站监测"
+"outboundMonitorDesc" = "按间隔测试每个出站；连续两次失败时通过 Telegram 通知管理员，恢复后再通知一次。出站列表里的状态和测速按钮不需要开启这里。"
+"outboundMonitorInterval" = "监测间隔（分钟）"
+"outboundTestUrl" = "测试地址"
+"outboundTestUrlDesc" = "任何 HTTP 响应都算通过；推荐用返回 204 的地址"
 "fragment" = "分片"
 "fragmentDesc" = "启用 TLS hello 数据包分片"
 "fragmentSett" = "设置"
@@ -508,6 +513,9 @@
 "useComma" = "逗号分隔的项目"
 
 [pages.xray.outbound]
+"down" = "不通"
+"test" = "测延迟"
+"speedTest" = "测速"
 "pinnedCertDesc" = "Xray 26 已取消“允许不安全”。自签证书请填写对方证书的 SHA-256（十六进制，多个用逗号分隔），即可跳过 CA 校验。"
 "addOutbound" = "添加出站"
 "addReverse" = "添加反向"
@@ -646,6 +654,8 @@
 
 [tgbot.messages]
 "cpuThreshold" = "🔴 CPU 使用率为 {{ .Percent }}%，超过阈值 {{ .Threshold }}%"
+"outboundDown" = "🔴 出站 {{ .Tag }} 连不通：{{ .Error }}"
+"outboundUp" = "🟢 出站 {{ .Tag }} 已恢复（{{ .Delay }} ms）"
 "selectUserFailed" = "❌ 用户选择错误！"
 "userSaved" = "✅ 电报用户已保存。"
 "loginSuccess" = "✅ 成功登录到面板。\r\n"

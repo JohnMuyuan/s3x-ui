@@ -26,6 +26,8 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 
 	g.POST("/", a.getXraySetting)
 	g.POST("/update", a.updateSetting)
+	g.POST("/outboundStatus", a.outboundStatus)
+	g.POST("/testOutbound", a.testOutbound)
 	g.GET("/getXrayResult", a.getXrayResult)
 	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
 	g.POST("/warp/:action", a.warp)
@@ -46,6 +48,16 @@ func (a *XraySettingController) getXraySetting(c *gin.Context) {
 	}
 	xrayResponse := "{ \"xraySetting\": " + xraySetting + ", \"inboundTags\": " + inboundTags + " }"
 	jsonObj(c, xrayResponse, nil)
+}
+
+func (a *XraySettingController) outboundStatus(c *gin.Context) {
+	jsonObj(c, service.OutboundStatus(), nil)
+}
+
+// testOutbound tests one outbound of the running Xray; speed adds a download.
+func (a *XraySettingController) testOutbound(c *gin.Context) {
+	testURL, _ := a.SettingService.GetOutboundTestUrl()
+	jsonObj(c, service.ProbeOutbound(c.PostForm("tag"), testURL, c.PostForm("speed") == "true"), nil)
 }
 
 func (a *XraySettingController) updateSetting(c *gin.Context) {

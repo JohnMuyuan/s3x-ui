@@ -297,6 +297,7 @@ func (s *Server) startTask() {
 
 	// due periodic traffic resets
 	s.cron.AddJob("@every 1m", job.NewTrafficResetJob())
+	s.cron.AddJob("@every 1m", job.NewOutboundMonitorJob())
 
 	// Make a traffic condition every day, 8:30
 	var entry cron.EntryID

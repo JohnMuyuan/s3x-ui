@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/netip"
+	"net/url"
 	"strings"
 	"time"
 	"math"
@@ -55,6 +56,9 @@ type AllSetting struct {
 	ExternalTrafficInformURI    string `json:"externalTrafficInformURI" form:"externalTrafficInformURI"`
 	IpLimitAllowlist            string `json:"ipLimitAllowlist" form:"ipLimitAllowlist"`
 	PanelOutbound               string `json:"panelOutbound" form:"panelOutbound"`
+	OutboundMonitorEnable       bool   `json:"outboundMonitorEnable" form:"outboundMonitorEnable"`
+	OutboundMonitorInterval     int    `json:"outboundMonitorInterval" form:"outboundMonitorInterval"`
+	OutboundTestUrl             string `json:"outboundTestUrl" form:"outboundTestUrl"`
 	SubEncrypt                  bool   `json:"subEncrypt" form:"subEncrypt"`
 	SubShowInfo                 bool   `json:"subShowInfo" form:"subShowInfo"`
 	SubURI                      string `json:"subURI" form:"subURI"`
@@ -131,6 +135,13 @@ func (s *AllSetting) CheckValid() error {
 	_, err := time.LoadLocation(s.TimeLocation)
 	if err != nil {
 		return common.NewError("time location not exist:", s.TimeLocation)
+	}
+
+	if s.OutboundMonitorInterval < 1 {
+		return common.NewError("outbound monitor interval must be at least 1 minute")
+	}
+	if u, err := url.Parse(s.OutboundTestUrl); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return common.NewError("outbound test URL is not an http(s) URL:", s.OutboundTestUrl)
 	}
 
 	// the IP limit job reads the same list; a typo there would silently count

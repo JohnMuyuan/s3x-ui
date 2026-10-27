@@ -71,6 +71,26 @@
         <template slot="traffic" slot-scope="text, outbound, index">
             <a-tag color="green">[[ findOutboundTraffic(outbound) ]]</a-tag>
         </template>
+        <template slot="status" slot-scope="text, outbound, index">
+            <template v-if="!['blackhole', 'dns', 'loopback'].includes(outbound.protocol)">
+                <a-tooltip v-if="outboundStatus[outbound.tag]" :title="outboundStatus[outbound.tag].error">
+                    <a-tag :color="outboundStatus[outbound.tag].ok ? (outboundStatus[outbound.tag].delayMs < 500 ? 'green' : 'orange') : 'red'">
+                        [[ outboundStatus[outbound.tag].ok ? outboundStatus[outbound.tag].delayMs + ' ms' : '{{ i18n "pages.xray.outbound.down" }}' ]]
+                    </a-tag>
+                </a-tooltip>
+                <a-tag v-if="outboundStatus[outbound.tag] && outboundStatus[outbound.tag].speedKBps" color="blue">
+                    [[ outboundStatus[outbound.tag].speedKBps >= 1024 ? (outboundStatus[outbound.tag].speedKBps / 1024).toFixed(1) + ' MB/s' : outboundStatus[outbound.tag].speedKBps + ' KB/s' ]]
+                </a-tag>
+                <a-button-group size="small">
+                    <a-tooltip title='{{ i18n "pages.xray.outbound.test" }}'>
+                        <a-button icon="thunderbolt" :loading="testingOutbound === outbound.tag + ':false'" @click="testOutbound(outbound.tag, false)"></a-button>
+                    </a-tooltip>
+                    <a-tooltip title='{{ i18n "pages.xray.outbound.speedTest" }}'>
+                        <a-button icon="dashboard" :loading="testingOutbound === outbound.tag + ':true'" @click="testOutbound(outbound.tag, true)"></a-button>
+                    </a-tooltip>
+                </a-button-group>
+            </template>
+        </template>
     </a-table>
 </a-space>
 {{end}}
