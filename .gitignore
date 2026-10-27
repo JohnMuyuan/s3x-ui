@@ -38,3 +38,5 @@ docker-compose.override.yml
 
 # Ignore .env (Environment Variables) file
 .env
+# sbcore sidecar build output
+/sidecar/sbcore/sbcore-linux-*
