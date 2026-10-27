@@ -92,5 +92,63 @@
             </template>
         </template>
     </a-table>
+    <a-card size="small" class="outbound-subs">
+        <template slot="title">
+            <a-tooltip :title='`{{ i18n "pages.xray.outbound.subsDesc" }}`'>
+                {{ i18n "pages.xray.outbound.subs" }} <a-icon type="question-circle"></a-icon>
+            </a-tooltip>
+        </template>
+        <a-button slot="extra" type="primary" size="small" icon="plus" @click="editOutboundSub()">{{ i18n "pages.xray.outbound.subAdd" }}</a-button>
+        <a-empty v-if="!outboundSubs.length" :image="null" description='{{ i18n "pages.xray.outbound.subsEmpty" }}'></a-empty>
+        <div v-for="sub in outboundSubs" :key="sub.id" class="outbound-sub">
+            <div class="outbound-sub-head">
+                <a-switch size="small" :checked="sub.enable" @change="v => saveOutboundSub({ ...sub, enable: v })"></a-switch>
+                <b>[[ sub.remark || sub.tagPrefix ]]</b>
+                <a-tag>[[ sub.tagPrefix ]]-</a-tag>
+                <span class="outbound-sub-meta">[[ (sub.tags || []).length ]] {{ i18n "pages.xray.outbound.subNodes" }}<template v-if="sub.lastUpdate"> · [[ new Date(sub.lastUpdate).toLocaleString() ]]</template></span>
+                <a-tooltip v-if="sub.lastError" :title="sub.lastError"><a-tag color="red">{{ i18n "pages.xray.outbound.subError" }}</a-tag></a-tooltip>
+                <a-button-group size="small" class="outbound-sub-actions">
+                    <a-button icon="sync" :loading="refreshingSub === sub.id" @click="refreshOutboundSub(sub.id)"></a-button>
+                    <a-button icon="edit" @click="editOutboundSub(sub)"></a-button>
+                    <a-popconfirm @confirm="delOutboundSub(sub.id)" title='{{ i18n "pages.xray.outbound.subDelConfirm" }}'
+                        :overlay-class-name="themeSwitcher.currentTheme" ok-text='{{ i18n "delete" }}' cancel-text='{{ i18n "cancel" }}'>
+                        <a-button icon="delete"></a-button>
+                    </a-popconfirm>
+                </a-button-group>
+            </div>
+            <div class="outbound-sub-tags" v-if="sub.enable">
+                <a-tag v-for="tag in sub.tags" :key="tag" class="outbound-sub-tag" @click="testOutbound(tag, false)"
+                    :color="outboundStatus[tag] ? (outboundStatus[tag].ok ? 'green' : 'red') : ''">
+                    <a-icon v-if="testingOutbound === tag + ':false'" type="loading"></a-icon>
+                    [[ tag ]]<template v-if="outboundStatus[tag]"> · [[ outboundStatus[tag].ok ? outboundStatus[tag].delayMs + ' ms' : '{{ i18n "pages.xray.outbound.down" }}' ]]</template>
+                </a-tag>
+            </div>
+        </div>
+    </a-card>
+    <a-modal v-model="outboundSubModal.visible" :title='outboundSubModal.form.id ? `{{ i18n "pages.xray.outbound.subEdit" }}` : `{{ i18n "pages.xray.outbound.subAdd" }}`'
+        :confirm-loading="outboundSubModal.loading" @ok="saveOutboundSub(outboundSubModal.form)" :class="themeSwitcher.currentTheme">
+        <a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
+            <a-form-item label='{{ i18n "remark" }}'><a-input v-model.trim="outboundSubModal.form.remark"></a-input></a-form-item>
+            <a-form-item label='URL'><a-input v-model.trim="outboundSubModal.form.url" placeholder="https://"></a-input></a-form-item>
+            <a-form-item>
+                <template slot="label">
+                    <a-tooltip :title='`{{ i18n "pages.xray.outbound.subPrefixDesc" }}`'>{{ i18n "pages.xray.outbound.subPrefix" }} <a-icon type="question-circle"></a-icon></a-tooltip>
+                </template>
+                <a-input v-model.trim="outboundSubModal.form.tagPrefix"></a-input>
+            </a-form-item>
+            <a-form-item label='{{ i18n "pages.xray.outbound.subInterval" }}'>
+                <a-input-number v-model="outboundSubModal.form.updateInterval" :min="1"></a-input-number>
+            </a-form-item>
+            <a-form-item label='{{ i18n "enable" }}'><a-switch v-model="outboundSubModal.form.enable"></a-switch></a-form-item>
+        </a-form>
+    </a-modal>
 </a-space>
+<style>
+    .outbound-sub { padding: 8px 0; border-bottom: 1px solid rgba(128, 128, 128, .15); }
+    .outbound-sub:last-child { border-bottom: none; }
+    .outbound-sub-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .outbound-sub-meta { opacity: .6; font-size: 12px; flex: 1; }
+    .outbound-sub-tags { margin-top: 6px; }
+    .outbound-sub-tag { cursor: pointer; margin-bottom: 4px; }
+</style>
 {{end}}

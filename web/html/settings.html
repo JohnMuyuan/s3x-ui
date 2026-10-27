@@ -294,6 +294,8 @@
         if (!msg.success) return;
         const xray = JSON.parse(msg.obj).xraySetting;
         const tags = [...(xray.outbounds || []), ...((xray.routing || {}).balancers || [])].map(o => o.tag);
+        const subs = await HttpUtil.post("/panel/xray/outboundSubs");
+        if (subs.success) (subs.obj || []).filter(s => s.enable).forEach(s => tags.push(...(s.tags || [])));
         this.egressTargets = tags.filter(tag => tag && tag !== 'blocked' && tag !== 'api');
       },
       async getAllSetting() {

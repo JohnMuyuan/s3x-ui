@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -168,6 +169,27 @@ type Client struct {
 	Reset      int    `json:"reset" form:"reset"`
 
 	ExternalLinks []ClientExternalLink `json:"externalLinks,omitempty"`
+}
+
+// OutboundSubscription is a remote list of share links whose nodes become Xray
+// outbounds tagged "<TagPrefix>-<name>", refreshed every UpdateInterval hours.
+// Outbounds holds the last good list as JSON.
+type OutboundSubscription struct {
+	Id             int    `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
+	Remark         string `json:"remark" form:"remark"`
+	URL            string `json:"url" form:"url"`
+	TagPrefix      string `json:"tagPrefix" form:"tagPrefix"`
+	Enable         bool   `json:"enable" form:"enable"`
+	UpdateInterval int    `json:"updateInterval" form:"updateInterval"`
+	LastUpdate     int64  `json:"lastUpdate" form:"-"`
+	LastError      string `json:"lastError" form:"-"`
+	Outbounds      string `json:"outbounds,omitempty" form:"-"`
+}
+
+func (s *OutboundSubscription) Parsed() []map[string]any {
+	var list []map[string]any
+	json.Unmarshal([]byte(s.Outbounds), &list)
+	return list
 }
 
 // ClientExternalLink is an extra node in a client's subscription: a share link

@@ -35,6 +35,7 @@ func initModels() error {
 		&model.InboundClientIps{},
 		&xray.ClientTraffic{},
 		&model.HistoryOfSeeders{},
+		&model.OutboundSubscription{},
 	}
 	for _, model := range models {
 		if err := db.AutoMigrate(model); err != nil {

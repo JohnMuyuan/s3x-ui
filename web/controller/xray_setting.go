@@ -1,6 +1,10 @@
 package controller
 
 import (
+	"errors"
+	"strconv"
+
+	"x-ui/database/model"
 	"x-ui/web/service"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +17,8 @@ type XraySettingController struct {
 	OutboundService    service.OutboundService
 	XrayService        service.XrayService
 	WarpService        service.WarpService
+
+	OutboundSubscriptionService service.OutboundSubscriptionService
 }
 
 func NewXraySettingController(g *gin.RouterGroup) *XraySettingController {
@@ -27,6 +33,10 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/", a.getXraySetting)
 	g.POST("/update", a.updateSetting)
 	g.POST("/outboundStatus", a.outboundStatus)
+	g.POST("/outboundSubs", a.outboundSubs)
+	g.POST("/outboundSub/save", a.saveOutboundSub)
+	g.POST("/outboundSub/del/:id", a.delOutboundSub)
+	g.POST("/outboundSub/refresh/:id", a.refreshOutboundSub)
 	g.POST("/testOutbound", a.testOutbound)
 	g.GET("/getXrayResult", a.getXrayResult)
 	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
@@ -48,6 +58,50 @@ func (a *XraySettingController) getXraySetting(c *gin.Context) {
 	}
 	xrayResponse := "{ \"xraySetting\": " + xraySetting + ", \"inboundTags\": " + inboundTags + " }"
 	jsonObj(c, xrayResponse, nil)
+}
+
+func (a *XraySettingController) outboundSubs(c *gin.Context) {
+	subs, err := a.OutboundSubscriptionService.List()
+	jsonObj(c, subs, err)
+}
+
+func (a *XraySettingController) saveOutboundSub(c *gin.Context) {
+	sub := &model.OutboundSubscription{}
+	if err := c.ShouldBind(sub); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+		return
+	}
+	err := a.OutboundSubscriptionService.Save(sub)
+	if err == nil {
+		a.XrayService.SetToNeedRestart()
+		if sub.LastError != "" {
+			err = errors.New(sub.LastError)
+		}
+	}
+	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+}
+
+func (a *XraySettingController) delOutboundSub(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err == nil {
+		err = a.OutboundSubscriptionService.Delete(id)
+	}
+	if err == nil {
+		a.XrayService.SetToNeedRestart()
+	}
+	jsonMsg(c, I18nWeb(c, "delete"), err)
+}
+
+func (a *XraySettingController) refreshOutboundSub(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	changed := false
+	if err == nil {
+		changed, err = a.OutboundSubscriptionService.Refresh(id)
+	}
+	if changed {
+		a.XrayService.SetToNeedRestart()
+	}
+	jsonMsg(c, I18nWeb(c, "pages.xray.outbound.subRefresh"), err)
 }
 
 func (a *XraySettingController) outboundStatus(c *gin.Context) {

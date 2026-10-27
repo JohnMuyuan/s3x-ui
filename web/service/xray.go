@@ -74,7 +74,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	xrayConfig.OutboundConfigs = dropAllowInsecure(xrayConfig.OutboundConfigs)
+	xrayConfig.OutboundConfigs = dropAllowInsecure(appendSubscriptionOutbounds(xrayConfig.OutboundConfigs))
 	xrayConfig.Policy = withUserOnline(xrayConfig.Policy)
 
 	s.inboundService.AddTraffic(nil, nil)

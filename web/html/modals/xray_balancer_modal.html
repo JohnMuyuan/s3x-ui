@@ -83,7 +83,7 @@
                 };
             }
             this.balancerTags = balancerTags.filter((tag) => tag != balancer.tag);
-            this.outboundTags = app.templateSettings.outbounds.filter((o) => !ObjectUtil.isEmpty(o.tag)).map(obj => obj.tag);
+            this.outboundTags = [...app.templateSettings.outbounds.filter((o) => !ObjectUtil.isEmpty(o.tag)).map(obj => obj.tag), ...app.subOutboundTags];
             this.isEdit = isEdit;
             this.check();
             this.checkSelector();

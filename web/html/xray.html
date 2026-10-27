@@ -265,6 +265,9 @@
       outboundsTraffic: [],
       outboundStatus: {},
       testingOutbound: '',
+      outboundSubs: [],
+      refreshingSub: 0,
+      outboundSubModal: { visible: false, loading: false, form: {} },
       saveBtnDisable: true,
       refreshing: false,
       restartResult: '',
@@ -390,6 +393,33 @@
     methods: {
       loading(spinning = true) {
         this.loadingStates.spinning = spinning;
+      },
+      async getOutboundSubs() {
+        const msg = await HttpUtil.post("/panel/xray/outboundSubs");
+        if (msg.success) this.outboundSubs = msg.obj || [];
+      },
+      editOutboundSub(sub) {
+        this.outboundSubModal.form = sub
+          ? { id: sub.id, remark: sub.remark, url: sub.url, tagPrefix: sub.tagPrefix, updateInterval: sub.updateInterval, enable: sub.enable }
+          : { id: 0, remark: '', url: '', tagPrefix: 'sub' + (this.outboundSubs.length + 1), updateInterval: 12, enable: true };
+        this.outboundSubModal.visible = true;
+      },
+      async saveOutboundSub(form) {
+        this.outboundSubModal.loading = true;
+        const msg = await HttpUtil.post("/panel/xray/outboundSub/save", form);
+        this.outboundSubModal.loading = false;
+        if (msg.success) this.outboundSubModal.visible = false;
+        await this.getOutboundSubs();
+      },
+      async delOutboundSub(id) {
+        await HttpUtil.post(`/panel/xray/outboundSub/del/${id}`);
+        await this.getOutboundSubs();
+      },
+      async refreshOutboundSub(id) {
+        this.refreshingSub = id;
+        await HttpUtil.post(`/panel/xray/outboundSub/refresh/${id}`);
+        this.refreshingSub = 0;
+        await this.getOutboundSubs();
       },
       async getOutboundStatus() {
         const msg = await HttpUtil.post("/panel/xray/outboundStatus");
@@ -1014,12 +1044,17 @@
       await this.getXrayResult();
       await this.getOutboundsTraffic();
       this.getOutboundStatus();
+      this.getOutboundSubs();
       while (true) {
         await PromiseUtil.sleep(800);
         this.saveBtnDisable = this.oldXraySetting === this.xraySetting;
       }
     },
     computed: {
+      // the tags subscriptions add, for routing rules and balancers
+      subOutboundTags() {
+        return this.outboundSubs.filter(s => s.enable).flatMap(s => s.tags || []);
+      },
       templateSettings: {
         get: function () {
           const parsedSettings = this.xraySetting ? JSON.parse(this.xraySetting) : null;
