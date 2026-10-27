@@ -111,6 +111,8 @@ func TestUnrunnableXDrive(t *testing.T) {
 		{"vless without encryption", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"none"}`, StreamSettings: xdrive}, false},
 		{"vmess", model.Inbound{Protocol: model.VMESS, Settings: `{}`, StreamSettings: xdrive}, false},
 		{"not xdrive", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"none"}`, StreamSettings: `{"network":"tcp"}`}, true},
+		{"reality without a key", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"none"}`, StreamSettings: `{"network":"tcp","security":"reality","realitySettings":{"privateKey":""}}`}, false},
+		{"reality with a key", model.Inbound{Protocol: model.VLESS, Settings: `{"decryption":"none"}`, StreamSettings: `{"network":"tcp","security":"reality","realitySettings":{"privateKey":"k"}}`}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -47,12 +47,20 @@ func dropAllowInsecure(outbounds json_util.RawMessage) json_util.RawMessage {
 }
 
 // unrunnable names inbounds Xray would refuse, which would stop every other
-// inbound with them: XDRIVE only runs as VLESS with encryption.
+// inbound with them: XDRIVE only runs as VLESS with encryption, and Reality
+// needs its private key.
 func unrunnable(inbound *model.Inbound) error {
 	var stream struct {
-		Network string `json:"network"`
+		Network         string `json:"network"`
+		Security        string `json:"security"`
+		RealitySettings struct {
+			PrivateKey string `json:"privateKey"`
+		} `json:"realitySettings"`
 	}
 	json.Unmarshal([]byte(inbound.StreamSettings), &stream)
+	if stream.Security == "reality" && stream.RealitySettings.PrivateKey == "" {
+		return fmt.Errorf("inbound %s: Reality has no private key", inbound.Tag)
+	}
 	if stream.Network != "xdrive" {
 		return nil
 	}
