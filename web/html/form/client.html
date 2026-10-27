@@ -15,7 +15,7 @@
         </template>
         <a-input v-model.trim="client.email"></a-input>
     </a-form-item>
-    <a-form-item v-if="inbound.protocol === Protocols.TROJAN || inbound.protocol === Protocols.SHADOWSOCKS">
+    <a-form-item v-if="inbound.protocol === Protocols.TROJAN || inbound.protocol === Protocols.SHADOWSOCKS || inbound.isSingbox">
         <template slot="label">
             <a-tooltip>
                 <template slot="title">
@@ -24,11 +24,12 @@
                 {{ i18n "password" }}
                 <a-icon v-if="inbound.protocol === Protocols.SHADOWSOCKS" @click="client.password = RandomUtil.randomShadowsocksPassword(inbound.settings.method)" type="sync"></a-icon>
                 <a-icon v-if="inbound.protocol === Protocols.TROJAN" @click="client.password = RandomUtil.randomSeq(10)"type="sync"> </a-icon>
+                <a-icon v-if="inbound.isSingbox" @click="client.password = RandomUtil.randomSeq(16)" type="sync"></a-icon>
             </a-tooltip>
         </template>
         <a-input v-model.trim="client.password"></a-input>
     </a-form-item>
-    <a-form-item v-if="inbound.protocol === Protocols.VMESS || inbound.protocol === Protocols.VLESS">
+    <a-form-item v-if="inbound.protocol === Protocols.VMESS || inbound.protocol === Protocols.VLESS || inbound.protocol === Protocols.TUIC">
         <template slot="label">
             <a-tooltip>
                 <template slot="title">

@@ -31,7 +31,7 @@ var optionKeys = map[model.Protocol][]string{
 	model.TUIC:      {"congestion_control", "auth_timeout", "zero_rtt_handshake", "heartbeat"},
 	model.Naive:     {"network", "quic_congestion_control"},
 	model.ShadowTLS: {"version", "handshake", "strict_mode"},
-	model.Snell:     {"version", "obfs_mode", "mode"},
+	model.Snell:     {"version", "psk", "obfs_mode", "mode"},
 }
 
 var quicProtocols = map[model.Protocol]bool{model.Hysteria: true, model.Hysteria2: true, model.TUIC: true}

@@ -125,7 +125,7 @@ class DBInbound {
             case Protocols.SHADOWSOCKS:
                 return this.toInbound().isSSMultiUser;
             default:
-                return false;
+                return isSingboxProtocol(this.protocol);
         }
     }
 
@@ -137,7 +137,7 @@ class DBInbound {
             case Protocols.SHADOWSOCKS:
                 return true;
             default:
-                return false;
+                return isSingboxProtocol(this.protocol);
         }
     }
 

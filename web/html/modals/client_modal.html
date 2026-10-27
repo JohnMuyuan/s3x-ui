@@ -56,7 +56,7 @@
             switch (protocol) {
                 case Protocols.TROJAN: return client.password;
                 case Protocols.SHADOWSOCKS: return client.email;
-                default: return client.id;
+                default: return isSingboxProtocol(protocol) ? client.email : client.id;
             }
         },
         addClient(inbound, clients) {
@@ -65,7 +65,7 @@
                 case Protocols.VLESS: return clients.push(new Inbound.VLESSSettings.VLESS());
                 case Protocols.TROJAN: return clients.push(new Inbound.TrojanSettings.Trojan());
                 case Protocols.SHADOWSOCKS: return clients.push(new Inbound.ShadowsocksSettings.Shadowsocks(clients[0].method, RandomUtil.randomShadowsocksPassword(inbound.settings.method)));
-                default: return null;
+                default: return inbound.isSingbox ? clients.push(new Inbound.SingboxSettings.Client(inbound.protocol)) : null;
             }
         },
         close() {

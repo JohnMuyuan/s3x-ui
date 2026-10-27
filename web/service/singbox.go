@@ -19,8 +19,13 @@ var (
 	sbLock    sync.Mutex
 	// sbApplied mirrors what sbcore runs: inbound tag to its JSON, plus the
 	// config around the inbounds. nil means unknown, forcing a full start.
-	sbApplied  map[string]string
-	sbBase     string
+	sbApplied map[string]string
+	sbBase    string
+	// sbRejected holds inbound JSON sbcore refused, so it is not retried (and
+	// the other inbounds restarted) until the inbound changes.
+	sbRejected = map[string]string{}
+	// sbSkipped remembers why an inbound could not be built, to log it once.
+	sbSkipped  = map[string]string{}
 	sbApplyCh  = make(chan struct{}, 1)
 	sbNoBinary bool
 )
@@ -76,9 +81,13 @@ func (s *SingboxService) desired() (*sbDesired, error) {
 		}
 		parts, err := singbox.BuildInbounds(ib)
 		if err != nil {
-			logger.Warning("sbcore: skipping inbound:", err)
+			if sbSkipped[ib.Tag] != err.Error() {
+				logger.Warning("sbcore: skipping inbound:", err)
+				sbSkipped[ib.Tag] = err.Error()
+			}
 			continue
 		}
+		delete(sbSkipped, ib.Tag)
 		for _, part := range parts {
 			raw, err := json.Marshal(part)
 			if err != nil {
@@ -171,16 +180,48 @@ func startFull(api *singbox.API, d *sbDesired) error {
 	if err != nil {
 		return err
 	}
+	if err = api.Start(cfg); err == nil {
+		sbApplied, sbBase = d.inbounds, d.base
+		clear(sbRejected)
+		logger.Infof("sbcore: started with %d inbound(s)", len(d.inbounds))
+		return nil
+	}
+	logger.Warning("sbcore: starting all inbounds failed, adding them one by one:", err)
+	return startEach(api, d)
+}
+
+// startEach starts sbcore without inbounds and adds them singly, so one
+// inbound sbcore rejects does not keep the others down.
+func startEach(api *singbox.API, d *sbDesired) error {
+	cfg, err := fullConfig(&sbDesired{base: d.base})
+	if err != nil {
+		return err
+	}
 	if err = api.Start(cfg); err != nil {
 		sbApplied = nil
 		return err
 	}
-	sbApplied, sbBase = d.inbounds, d.base
-	logger.Infof("sbcore: started with %d inbound(s)", len(d.inbounds))
+	sbApplied, sbBase = map[string]string{}, d.base
+	clear(sbRejected)
+	for i := len(d.order) - 1; i >= 0; i-- {
+		tag := d.order[i]
+		if err := api.AddInbound([]byte(d.inbounds[tag])); err != nil {
+			logger.Warningf("sbcore: inbound %s rejected: %v", tag, err)
+			sbRejected[tag] = d.inbounds[tag]
+			continue
+		}
+		sbApplied[tag] = d.inbounds[tag]
+	}
+	logger.Infof("sbcore: started with %d of %d inbound(s)", len(sbApplied), len(d.inbounds))
 	return nil
 }
 
 func applyDiff(api *singbox.API, d *sbDesired) error {
+	for tag := range sbRejected {
+		if _, keep := d.inbounds[tag]; !keep {
+			delete(sbRejected, tag)
+		}
+	}
 	for tag := range sbApplied {
 		if _, keep := d.inbounds[tag]; !keep {
 			if err := api.DelInbound(tag); err != nil {
@@ -194,10 +235,18 @@ func applyDiff(api *singbox.API, d *sbDesired) error {
 		tag := d.order[i]
 		want := d.inbounds[tag]
 		have, live := sbApplied[tag]
+		if rejected, ok := sbRejected[tag]; ok {
+			if rejected == want {
+				continue
+			}
+			delete(sbRejected, tag)
+		}
 		switch {
 		case !live:
 			if err := api.AddInbound([]byte(want)); err != nil {
-				return err
+				logger.Warningf("sbcore: inbound %s rejected: %v", tag, err)
+				sbRejected[tag] = want
+				continue
 			}
 		case have == want:
 			continue

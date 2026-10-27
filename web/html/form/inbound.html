@@ -103,6 +103,11 @@
     {{template "form/wireguard"}}
 </template>
 
+<!-- sing-box protocols, served by sbcore -->
+<template v-if="inbound.isSingbox">
+    {{template "form/singbox"}}
+</template>
+
 <!-- stream settings -->
 <template v-if="inbound.canEnableStream()">
     {{template "form/streamSettings"}}
@@ -115,7 +120,7 @@
 </template>
 
 <!-- sniffing -->
-<a-collapse>
+<a-collapse v-if="!inbound.isSingbox">
     <a-collapse-panel header='Sniffing'>
         {{template "form/sniffing"}}
     </a-collapse-panel>

@@ -487,7 +487,7 @@
           Protocols.VLESS,
           Protocols.TROJAN, 
           Protocols.SHADOWSOCKS
-        ].includes(this.inbound.protocol)
+        ].includes(this.inbound.protocol) || this.inbound.isSingbox
       ) {
         if (app.ipLimitEnable && this.clientSettings.limitIp) {
           refreshIPs(this.clientStats.email).then((ips) => {

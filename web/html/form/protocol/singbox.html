@@ -1,0 +1,145 @@
+{{define "form/singbox"}}
+<a-collapse activeKey="0" v-for="(client, index) in inbound.settings.clients.slice(0,1)" v-if="!isEdit">
+  <a-collapse-panel header='{{ i18n "pages.inbounds.client" }}'>
+    {{template "form/client"}}
+  </a-collapse-panel>
+</a-collapse>
+<a-collapse v-else>
+  <a-collapse-panel :header="'{{ i18n "pages.client.clientCount"}} : ' + inbound.settings.clients.length">
+    <table width="100%">
+      <tr class="client-table-header">
+        <th>{{ i18n "pages.inbounds.email" }}</th>
+        <th v-if="inbound.protocol === Protocols.TUIC">ID</th>
+        <th>Password</th>
+      </tr>
+      <tr v-for="(client, index) in inbound.settings.clients" :class="index % 2 == 1 ? 'client-table-odd-row' : ''">
+        <td>[[ client.email ]]</td>
+        <td v-if="inbound.protocol === Protocols.TUIC">[[ client.id ]]</td>
+        <td>[[ client.password ]]</td>
+      </tr>
+    </table>
+  </a-collapse-panel>
+</a-collapse>
+
+<a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
+  <template v-if="inbound.protocol === Protocols.HYSTERIA2 || inbound.protocol === Protocols.HYSTERIA">
+    <a-form-item>
+      <template slot="label">
+        <a-tooltip>
+          <template slot="title">0 = BBR</template>
+          Up Mbps
+          <a-icon type="question-circle"></a-icon>
+        </a-tooltip>
+      </template>
+      <a-input-number v-model.number="inbound.settings.upMbps" :min="0"></a-input-number>
+    </a-form-item>
+    <a-form-item label="Down Mbps">
+      <a-input-number v-model.number="inbound.settings.downMbps" :min="0"></a-input-number>
+    </a-form-item>
+  </template>
+
+  <template v-if="inbound.protocol === Protocols.HYSTERIA2">
+    <a-form-item label="Ignore Client Bandwidth">
+      <a-switch v-model="inbound.settings.ignoreClientBandwidth"></a-switch>
+    </a-form-item>
+    <a-form-item>
+      <template slot="label">
+        <a-tooltip>
+          <template slot="title">Salamander</template>
+          Obfs Password
+          <a-icon type="question-circle"></a-icon>
+        </a-tooltip>
+      </template>
+      <a-input v-model.trim="inbound.settings.obfsPassword">
+        <a-icon slot="addonAfter" type="sync" @click="inbound.settings.obfsPassword = RandomUtil.randomSeq(16)"></a-icon>
+      </a-input>
+    </a-form-item>
+    <a-form-item>
+      <template slot="label">
+        <a-tooltip>
+          <template slot="title">https://example.com or file:///var/www</template>
+          Masquerade
+          <a-icon type="question-circle"></a-icon>
+        </a-tooltip>
+      </template>
+      <a-input v-model.trim="inbound.settings.masquerade"></a-input>
+    </a-form-item>
+  </template>
+
+  <template v-if="inbound.protocol === Protocols.HYSTERIA">
+    <a-form-item label="Obfs">
+      <a-input v-model.trim="inbound.settings.obfs"></a-input>
+    </a-form-item>
+  </template>
+
+  <template v-if="inbound.protocol === Protocols.TUIC">
+    <a-form-item label="Congestion Control">
+      <a-select v-model="inbound.settings.congestionControl" :dropdown-class-name="themeSwitcher.currentTheme">
+        <a-select-option v-for="c in ['bbr', 'cubic', 'new_reno']" :key="c" :value="c">[[ c ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+    <a-form-item label="0-RTT Handshake">
+      <a-switch v-model="inbound.settings.zeroRttHandshake"></a-switch>
+    </a-form-item>
+    <a-form-item label="Auth Timeout">
+      <a-input v-model.trim="inbound.settings.authTimeout"></a-input>
+    </a-form-item>
+    <a-form-item label="Heartbeat">
+      <a-input v-model.trim="inbound.settings.heartbeat"></a-input>
+    </a-form-item>
+  </template>
+
+  <template v-if="inbound.protocol === Protocols.SHADOWTLS">
+    <a-form-item label="Version">
+      <a-select v-model="inbound.settings.version" :dropdown-class-name="themeSwitcher.currentTheme">
+        <a-select-option v-for="v in [3, 2]" :key="v" :value="v">v[[ v ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+    <a-form-item label="Handshake Server">
+      <a-input v-model.trim="inbound.settings.handshakeServer"></a-input>
+    </a-form-item>
+    <a-form-item label="Handshake Port">
+      <a-input-number v-model.number="inbound.settings.handshakePort" :min="1" :max="65535"></a-input-number>
+    </a-form-item>
+    <a-form-item label="Strict Mode" v-if="inbound.settings.version === 3">
+      <a-switch v-model="inbound.settings.strictMode"></a-switch>
+    </a-form-item>
+    <a-form-item label="SS Method">
+      <a-select v-model="inbound.settings.ssMethod" :dropdown-class-name="themeSwitcher.currentTheme"
+        @change="inbound.settings.ssPassword = RandomUtil.randomShadowsocksPassword(inbound.settings.ssMethod)">
+        <a-select-option v-for="m in [SSMethods.BLAKE3_AES_128_GCM, SSMethods.BLAKE3_AES_256_GCM, SSMethods.BLAKE3_CHACHA20_POLY1305]"
+          :key="m" :value="m">[[ m ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+    <a-form-item label="SS Password">
+      <a-input v-model.trim="inbound.settings.ssPassword">
+        <a-icon slot="addonAfter" type="sync"
+          @click="inbound.settings.ssPassword = RandomUtil.randomShadowsocksPassword(inbound.settings.ssMethod)"></a-icon>
+      </a-input>
+    </a-form-item>
+  </template>
+
+  <template v-if="inbound.protocol === Protocols.SNELL">
+    <a-form-item label="Version">
+      <a-select v-model="inbound.settings.version" :dropdown-class-name="themeSwitcher.currentTheme">
+        <a-select-option v-for="v in [5, 6]" :key="v" :value="v">v[[ v ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+    <a-form-item label="PSK">
+      <a-input v-model.trim="inbound.settings.psk">
+        <a-icon slot="addonAfter" type="sync" @click="inbound.settings.psk = RandomUtil.randomSeq(32)"></a-icon>
+      </a-input>
+    </a-form-item>
+    <a-form-item label="Mode" v-if="inbound.settings.version === 6">
+      <a-select v-model="inbound.settings.mode" :dropdown-class-name="themeSwitcher.currentTheme">
+        <a-select-option v-for="m in ['default', 'unshaped', 'unsafe-raw']" :key="m" :value="m">[[ m ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+    <a-form-item label="Obfs" v-if="inbound.settings.version === 5">
+      <a-select v-model="inbound.settings.obfsMode" :dropdown-class-name="themeSwitcher.currentTheme">
+        <a-select-option v-for="o in ['none', 'http', 'tls']" :key="o" :value="o">[[ o ]]</a-select-option>
+      </a-select>
+    </a-form-item>
+  </template>
+</a-form>
+{{end}}

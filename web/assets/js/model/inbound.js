@@ -7,7 +7,24 @@ const Protocols = {
     SOCKS: 'socks',
     HTTP: 'http',
     WIREGUARD: 'wireguard',
+    ANYTLS: 'anytls',
+    HYSTERIA2: 'hysteria2',
+    TUIC: 'tuic',
+    HYSTERIA: 'hysteria',
+    NAIVE: 'naive',
+    SHADOWTLS: 'shadowtls',
+    SNELL: 'snell',
 };
+
+// Served by the sbcore sing-box sidecar rather than Xray.
+const SINGBOX_PROTOCOLS = [Protocols.ANYTLS, Protocols.HYSTERIA2, Protocols.TUIC, Protocols.HYSTERIA,
+    Protocols.NAIVE, Protocols.SHADOWTLS, Protocols.SNELL];
+const SINGBOX_TLS_PROTOCOLS = [Protocols.ANYTLS, Protocols.HYSTERIA2, Protocols.TUIC, Protocols.HYSTERIA, Protocols.NAIVE];
+const SINGBOX_QUIC_PROTOCOLS = [Protocols.HYSTERIA2, Protocols.TUIC, Protocols.HYSTERIA];
+
+function isSingboxProtocol(protocol) {
+    return SINGBOX_PROTOCOLS.includes(protocol);
+}
 
 const SSMethods = {
     AES_256_GCM: 'aes-256-gcm',
@@ -1081,8 +1098,12 @@ class Inbound extends XrayCommonClass {
             case Protocols.VLESS: return this.settings.vlesses;
             case Protocols.TROJAN: return this.settings.trojans;
             case Protocols.SHADOWSOCKS: return this.isSSMultiUser ? this.settings.shadowsockses : null;
-            default: return null;
+            default: return isSingboxProtocol(this.protocol) ? this.settings.clients : null;
         }
+    }
+
+    get isSingbox() {
+        return isSingboxProtocol(this.protocol);
     }
 
     get protocol() {
@@ -1094,6 +1115,15 @@ class Inbound extends XrayCommonClass {
         this.settings = Inbound.Settings.getSettings(protocol);
         if (protocol === Protocols.TROJAN) {
             this.tls = false;
+        }
+        if (SINGBOX_TLS_PROTOCOLS.includes(protocol)) {
+            this.stream.network = 'tcp';
+            if (this.stream.security === 'none' || SINGBOX_QUIC_PROTOCOLS.includes(protocol)) {
+                this.stream.security = 'tls';
+            }
+            if (SINGBOX_QUIC_PROTOCOLS.includes(protocol)) {
+                this.stream.tls.alpn = protocol === Protocols.HYSTERIA ? [] : [ALPN_OPTION.H3];
+            }
         }
     }
 
@@ -1204,6 +1234,7 @@ class Inbound extends XrayCommonClass {
     }
 
     canEnableTls() {
+        if (SINGBOX_TLS_PROTOCOLS.includes(this.protocol)) return true;
         if (![Protocols.VMESS, Protocols.VLESS, Protocols.TROJAN, Protocols.SHADOWSOCKS].includes(this.protocol)) return false;
         return ["tcp", "ws", "http", "grpc", "httpupgrade", "xhttp"].includes(this.network);
     }
@@ -1217,6 +1248,7 @@ class Inbound extends XrayCommonClass {
     }
 
     canEnableReality() {
+        if (this.protocol === Protocols.ANYTLS) return true;
         if (![Protocols.VLESS, Protocols.TROJAN].includes(this.protocol)) return false;
         return ["tcp", "http", "grpc", "xhttp"].includes(this.network);
     }
@@ -1606,7 +1638,77 @@ class Inbound extends XrayCommonClass {
                 return this.genSSLink(address, port, forceTls, remark, this.isSSMultiUser ? client.password : '');
             case Protocols.TROJAN:
                 return this.genTrojanLink(address, port, forceTls, remark, client.password);
-            default: return '';
+            default:
+                return this.isSingbox ? this.genSingboxLink(address, port, remark, client) : '';
+        }
+    }
+
+    // ShadowTLS and Snell have no common URI scheme: ShadowTLS uses Shadowrocket's
+    // ss:// shadow-tls form, Snell a Surge proxy line.
+    genSingboxLink(address, port, remark, client) {
+        const sec = this.stream.security;
+        const tls = this.stream.tls;
+        const reality = this.stream.reality;
+        const sni = sec === 'reality' ? reality.serverNames.split(',')[0] : tls.sni;
+        const insecure = sec === 'tls' && tls.settings.allowInsecure;
+        const host = address.includes(':') && !address.startsWith('[') ? `[${address}]` : address;
+        const hash = '#' + encodeURIComponent(remark);
+        const s = this.settings;
+        const params = new URLSearchParams();
+        switch (this.protocol) {
+            case Protocols.ANYTLS:
+                params.set('security', sec);
+                if (sni) params.set('sni', sni);
+                if (sec === 'reality') {
+                    params.set('pbk', reality.settings.publicKey);
+                    params.set('sid', reality.shortIds.split(',')[0]);
+                    if (reality.settings.fingerprint) params.set('fp', reality.settings.fingerprint);
+                } else {
+                    if (tls.settings.fingerprint) params.set('fp', tls.settings.fingerprint);
+                    if (tls.alpn.length > 0) params.set('alpn', tls.alpn.join(','));
+                    if (insecure) params.set('insecure', '1');
+                }
+                return `anytls://${encodeURIComponent(client.password)}@${host}:${port}?${params}${hash}`;
+            case Protocols.HYSTERIA2:
+                if (sni) params.set('sni', sni);
+                if (s.obfsPassword) {
+                    params.set('obfs', 'salamander');
+                    params.set('obfs-password', s.obfsPassword);
+                }
+                if (insecure) params.set('insecure', '1');
+                return `hysteria2://${encodeURIComponent(client.password)}@${host}:${port}?${params}${hash}`;
+            case Protocols.TUIC:
+                if (sni) params.set('sni', sni);
+                params.set('alpn', tls.alpn.length > 0 ? tls.alpn.join(',') : 'h3');
+                params.set('congestion_control', s.congestionControl);
+                params.set('udp_relay_mode', 'native');
+                if (insecure) params.set('allow_insecure', '1');
+                return `tuic://${client.id}:${encodeURIComponent(client.password)}@${host}:${port}?${params}${hash}`;
+            case Protocols.HYSTERIA:
+                params.set('protocol', 'udp');
+                params.set('auth', client.password);
+                if (sni) params.set('peer', sni);
+                if (insecure) params.set('insecure', '1');
+                params.set('upmbps', s.upMbps);
+                params.set('downmbps', s.downMbps);
+                params.set('alpn', tls.alpn.length > 0 ? tls.alpn.join(',') : 'hysteria');
+                if (s.obfs) params.set('obfsParam', s.obfs);
+                return `hysteria://${host}:${port}?${params}${hash}`;
+            case Protocols.NAIVE:
+                return `naive+https://${encodeURIComponent(client.email)}:${encodeURIComponent(client.password)}@${host}:${port}${hash}`;
+            case Protocols.SHADOWTLS: {
+                const userInfo = Base64.encode(`${s.ssMethod}:${s.ssPassword}`, true);
+                const stls = Base64.encode(JSON.stringify({ version: String(s.version), host: s.handshakeServer, password: client.password }), true);
+                return `ss://${userInfo}@${host}:${port}?shadow-tls=${stls}${hash}`;
+            }
+            case Protocols.SNELL: {
+                let line = `${remark} = snell, ${address}, ${port}, psk=${s.psk}, userkey=${client.password}, version=${s.version}`;
+                if (s.version === 5 && s.obfsMode !== 'none') line += `, obfs=${s.obfsMode}`;
+                if (s.version === 6 && s.mode !== 'default') line += `, mode=${s.mode}`;
+                return line;
+            }
+            default:
+                return '';
         }
     }
 
@@ -1680,7 +1782,7 @@ class Inbound extends XrayCommonClass {
 
     toJson() {
         let streamSettings;
-        if (this.canEnableStream()) {
+        if (this.canEnableStream() || this.canEnableTls()) {
             streamSettings = this.stream.toJson();
         }
         return {
@@ -1713,7 +1815,7 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.SOCKS: return new Inbound.SocksSettings(protocol);
             case Protocols.HTTP: return new Inbound.HttpSettings(protocol);
             case Protocols.WIREGUARD: return new Inbound.WireguardSettings(protocol);
-            default: return null;
+            default: return isSingboxProtocol(protocol) ? new Inbound.SingboxSettings(protocol) : null;
         }
     }
 
@@ -1727,7 +1829,7 @@ Inbound.Settings = class extends XrayCommonClass {
             case Protocols.SOCKS: return Inbound.SocksSettings.fromJson(json);
             case Protocols.HTTP: return Inbound.HttpSettings.fromJson(json);
             case Protocols.WIREGUARD: return Inbound.WireguardSettings.fromJson(json);
-            default: return null;
+            default: return isSingboxProtocol(protocol) ? Inbound.SingboxSettings.fromJson(protocol, json) : null;
         }
     }
 
@@ -2488,5 +2590,208 @@ Inbound.WireguardSettings.Peer = class extends XrayCommonClass {
             allowedIPs: this.allowedIPs,
             keepAlive: this.keepAlive ?? undefined,
         };
+    }
+};
+
+// One settings shape for every sing-box protocol: 2.6.2-style clients keyed by
+// email, plus the protocol's own options stored under sing-box's field names.
+Inbound.SingboxSettings = class extends Inbound.Settings {
+    constructor(protocol, clients, options = {}) {
+        super(protocol);
+        this.clients = clients || [new Inbound.SingboxSettings.Client(protocol)];
+        Object.assign(this, Inbound.SingboxSettings.defaults(protocol), options);
+    }
+
+    static defaults(protocol) {
+        switch (protocol) {
+            case Protocols.HYSTERIA2:
+                return { upMbps: 0, downMbps: 0, ignoreClientBandwidth: false, obfsPassword: '', masquerade: '' };
+            case Protocols.HYSTERIA:
+                return { upMbps: 100, downMbps: 100, obfs: '' };
+            case Protocols.TUIC:
+                return { congestionControl: 'bbr', zeroRttHandshake: false, authTimeout: '3s', heartbeat: '10s' };
+            case Protocols.SHADOWTLS:
+                return {
+                    version: 3, handshakeServer: 'www.microsoft.com', handshakePort: 443, strictMode: true,
+                    ssMethod: SSMethods.BLAKE3_AES_128_GCM,
+                    ssPassword: RandomUtil.randomShadowsocksPassword(SSMethods.BLAKE3_AES_128_GCM),
+                };
+            case Protocols.SNELL:
+                return { version: 5, psk: RandomUtil.randomSeq(32), obfsMode: 'none', mode: 'default' };
+            default:
+                return {};
+        }
+    }
+
+    static fromJson(protocol, json = {}) {
+        const o = {};
+        const has = (k) => json[k] !== undefined && json[k] !== null;
+        switch (protocol) {
+            case Protocols.HYSTERIA2:
+                if (has('up_mbps')) o.upMbps = json.up_mbps;
+                if (has('down_mbps')) o.downMbps = json.down_mbps;
+                if (has('ignore_client_bandwidth')) o.ignoreClientBandwidth = json.ignore_client_bandwidth;
+                if (json.obfs) o.obfsPassword = json.obfs.password || '';
+                if (has('masquerade')) o.masquerade = json.masquerade;
+                break;
+            case Protocols.HYSTERIA:
+                if (has('up_mbps')) o.upMbps = json.up_mbps;
+                if (has('down_mbps')) o.downMbps = json.down_mbps;
+                if (has('obfs')) o.obfs = json.obfs;
+                break;
+            case Protocols.TUIC:
+                if (has('congestion_control')) o.congestionControl = json.congestion_control;
+                if (has('zero_rtt_handshake')) o.zeroRttHandshake = json.zero_rtt_handshake;
+                if (has('auth_timeout')) o.authTimeout = json.auth_timeout;
+                if (has('heartbeat')) o.heartbeat = json.heartbeat;
+                break;
+            case Protocols.SHADOWTLS:
+                if (has('version')) o.version = json.version;
+                if (json.handshake) {
+                    o.handshakeServer = json.handshake.server;
+                    o.handshakePort = json.handshake.server_port;
+                }
+                if (has('strict_mode')) o.strictMode = json.strict_mode;
+                if (json.shadowsocks) {
+                    o.ssMethod = json.shadowsocks.method;
+                    o.ssPassword = json.shadowsocks.password;
+                }
+                break;
+            case Protocols.SNELL:
+                if (has('version')) o.version = json.version;
+                if (has('psk')) o.psk = json.psk;
+                if (has('obfs_mode')) o.obfsMode = json.obfs_mode;
+                if (has('mode')) o.mode = json.mode;
+                break;
+        }
+        const clients = (json.clients || []).map(c => Inbound.SingboxSettings.Client.fromJson(protocol, c));
+        return new Inbound.SingboxSettings(protocol, clients, o);
+    }
+
+    toJson() {
+        const out = { clients: Inbound.SingboxSettings.toJsonArray(this.clients) };
+        switch (this.protocol) {
+            case Protocols.HYSTERIA2:
+                out.up_mbps = this.upMbps;
+                out.down_mbps = this.downMbps;
+                out.ignore_client_bandwidth = this.ignoreClientBandwidth;
+                if (this.obfsPassword) out.obfs = { type: 'salamander', password: this.obfsPassword };
+                if (this.masquerade) out.masquerade = this.masquerade;
+                break;
+            case Protocols.HYSTERIA:
+                out.up_mbps = this.upMbps;
+                out.down_mbps = this.downMbps;
+                if (this.obfs) out.obfs = this.obfs;
+                break;
+            case Protocols.TUIC:
+                out.congestion_control = this.congestionControl;
+                out.zero_rtt_handshake = this.zeroRttHandshake;
+                out.auth_timeout = this.authTimeout;
+                out.heartbeat = this.heartbeat;
+                break;
+            case Protocols.SHADOWTLS:
+                out.version = this.version;
+                out.handshake = { server: this.handshakeServer, server_port: this.handshakePort };
+                out.strict_mode = this.strictMode;
+                out.shadowsocks = { method: this.ssMethod, password: this.ssPassword };
+                break;
+            case Protocols.SNELL:
+                out.version = this.version;
+                out.psk = this.psk;
+                if (this.version === 5) out.obfs_mode = this.obfsMode;
+                if (this.version === 6) out.mode = this.mode;
+                break;
+        }
+        return out;
+    }
+};
+
+Inbound.SingboxSettings.Client = class extends XrayCommonClass {
+    constructor(
+        protocol,
+        email = RandomUtil.randomLowerAndNum(8),
+        password = RandomUtil.randomSeq(16),
+        id = protocol === Protocols.TUIC ? RandomUtil.randomUUID() : '',
+        limitIp = 0,
+        totalGB = 0,
+        expiryTime = 0,
+        enable = true,
+        tgId = '',
+        subId = RandomUtil.randomLowerAndNum(16),
+        comment = '',
+        reset = 0
+    ) {
+        super();
+        this.email = email;
+        this.password = password;
+        this.id = id;
+        this.limitIp = limitIp;
+        this.totalGB = totalGB;
+        this.expiryTime = expiryTime;
+        this.enable = enable;
+        this.tgId = tgId;
+        this.subId = subId;
+        this.comment = comment;
+        this.reset = reset;
+    }
+
+    toJson() {
+        const json = {
+            email: this.email,
+            password: this.password,
+            limitIp: this.limitIp,
+            totalGB: this.totalGB,
+            expiryTime: this.expiryTime,
+            enable: this.enable,
+            tgId: this.tgId,
+            subId: this.subId,
+            comment: this.comment,
+            reset: this.reset,
+        };
+        if (this.id) json.id = this.id;
+        return json;
+    }
+
+    static fromJson(protocol, json = {}) {
+        return new Inbound.SingboxSettings.Client(
+            protocol,
+            json.email,
+            json.password,
+            json.id || '',
+            json.limitIp,
+            json.totalGB,
+            json.expiryTime,
+            json.enable,
+            json.tgId,
+            json.subId,
+            json.comment,
+            json.reset,
+        );
+    }
+
+    get _expiryTime() {
+        if (this.expiryTime === 0 || this.expiryTime === "") {
+            return null;
+        }
+        if (this.expiryTime < 0) {
+            return this.expiryTime / -86400000;
+        }
+        return moment(this.expiryTime);
+    }
+
+    set _expiryTime(t) {
+        if (t == null || t === "") {
+            this.expiryTime = 0;
+        } else {
+            this.expiryTime = t.valueOf();
+        }
+    }
+
+    get _totalGB() {
+        return NumberFormatter.toFixed(this.totalGB / SizeFormatter.ONE_GB, 2);
+    }
+
+    set _totalGB(gb) {
+        this.totalGB = NumberFormatter.toFixed(gb * SizeFormatter.ONE_GB, 0);
     }
 };

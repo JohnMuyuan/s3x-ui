@@ -174,7 +174,6 @@
         if (row.useIPv4 && this.serverStatus.publicIP.ipv4) {
           // Replace the hostname or IP in the link with the IPv4 address
           const originalLink = row.originalLink;
-          const url = new URL(originalLink);
           const ipv4 = this.serverStatus.publicIP.ipv4;
           
           if (qrModal.inbound.protocol == Protocols.WIREGUARD) {
@@ -187,8 +186,12 @@
                 `Endpoint = ${ipv4}:${match[2]}`
               );
             }
+          } else if (qrModal.inbound.protocol == Protocols.SNELL) {
+            // Surge proxy line: "name = snell, host, port, ..."
+            row.link = originalLink.replace(/= snell, [^,]+,/, `= snell, ${ipv4},`);
           } else {
             // For other protocols using URL format
+            const url = new URL(originalLink);
             url.hostname = ipv4;
             row.link = url.toString();
           }
