@@ -237,6 +237,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 }
 
 func (s *Server) startTask() {
+	service.StartSingboxApplier(s.ctx)
 	err := s.xrayService.RestartXray(true)
 	if err != nil {
 		logger.Warning("start xray failed:", err)
@@ -376,6 +377,9 @@ func (s *Server) Start() (err error) {
 func (s *Server) Stop() error {
 	s.cancel()
 	s.xrayService.StopXray()
+	if err := new(service.SingboxService).Stop(); err != nil {
+		logger.Warning("stop sbcore failed:", err)
+	}
 	if s.cron != nil {
 		s.cron.Stop()
 	}

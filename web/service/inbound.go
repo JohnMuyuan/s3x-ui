@@ -18,7 +18,7 @@ import (
 )
 
 type InboundService struct {
-	xrayApi xray.XrayAPI
+	xrayApi coreAPI
 }
 
 func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
@@ -181,7 +181,7 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 			if client.Password == "" {
 				return inbound, false, common.NewError("empty client ID")
 			}
-		} else if inbound.Protocol == "shadowsocks" {
+		} else if inbound.Protocol.KeysClientsByEmail() {
 			if client.Email == "" {
 				return inbound, false, common.NewError("empty client ID")
 			}
@@ -332,11 +332,7 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	oldInbound.StreamSettings = inbound.StreamSettings
 	oldInbound.Sniffing = inbound.Sniffing
 	oldInbound.Allocate = inbound.Allocate
-	if inbound.Listen == "" || inbound.Listen == "0.0.0.0" || inbound.Listen == "::" || inbound.Listen == "::0" {
-		oldInbound.Tag = fmt.Sprintf("inbound-%v", inbound.Port)
-	} else {
-		oldInbound.Tag = fmt.Sprintf("inbound-%v:%v", inbound.Listen, inbound.Port)
-	}
+	oldInbound.Tag = model.InboundTag(inbound.Listen, inbound.Port, oldInbound.Protocol)
 
 	needRestart := false
 	s.xrayApi.Init(p.GetAPIPort())
@@ -440,7 +436,7 @@ func (s *InboundService) AddInboundClient(data *model.Inbound) (bool, error) {
 			if client.Password == "" {
 				return false, common.NewError("empty client ID")
 			}
-		} else if oldInbound.Protocol == "shadowsocks" {
+		} else if oldInbound.Protocol.KeysClientsByEmail() {
 			if client.Email == "" {
 				return false, common.NewError("empty client ID")
 			}
@@ -531,7 +527,7 @@ func (s *InboundService) DelInboundClient(inboundId int, clientId string) (bool,
 	if oldInbound.Protocol == "trojan" {
 		client_key = "password"
 	}
-	if oldInbound.Protocol == "shadowsocks" {
+	if oldInbound.Protocol.KeysClientsByEmail() {
 		client_key = "email"
 	}
 
@@ -634,7 +630,7 @@ func (s *InboundService) UpdateInboundClient(data *model.Inbound, clientId strin
 		if oldInbound.Protocol == "trojan" {
 			oldClientId = oldClient.Password
 			newClientId = clients[0].Password
-		} else if oldInbound.Protocol == "shadowsocks" {
+		} else if oldInbound.Protocol.KeysClientsByEmail() {
 			oldClientId = oldClient.Email
 			newClientId = clients[0].Email
 		} else {
@@ -1246,7 +1242,7 @@ func (s *InboundService) SetClientTelegramUserID(trafficId int, tgId int64) (boo
 		if oldClient.Email == clientEmail {
 			if inbound.Protocol == "trojan" {
 				clientId = oldClient.Password
-			} else if inbound.Protocol == "shadowsocks" {
+			} else if inbound.Protocol.KeysClientsByEmail() {
 				clientId = oldClient.Email
 			} else {
 				clientId = oldClient.ID
@@ -1330,7 +1326,7 @@ func (s *InboundService) ToggleClientEnableByEmail(clientEmail string) (bool, bo
 		if oldClient.Email == clientEmail {
 			if inbound.Protocol == "trojan" {
 				clientId = oldClient.Password
-			} else if inbound.Protocol == "shadowsocks" {
+			} else if inbound.Protocol.KeysClientsByEmail() {
 				clientId = oldClient.Email
 			} else {
 				clientId = oldClient.ID
@@ -1393,7 +1389,7 @@ func (s *InboundService) ResetClientIpLimitByEmail(clientEmail string, count int
 		if oldClient.Email == clientEmail {
 			if inbound.Protocol == "trojan" {
 				clientId = oldClient.Password
-			} else if inbound.Protocol == "shadowsocks" {
+			} else if inbound.Protocol.KeysClientsByEmail() {
 				clientId = oldClient.Email
 			} else {
 				clientId = oldClient.ID
@@ -1450,7 +1446,7 @@ func (s *InboundService) ResetClientExpiryTimeByEmail(clientEmail string, expiry
 		if oldClient.Email == clientEmail {
 			if inbound.Protocol == "trojan" {
 				clientId = oldClient.Password
-			} else if inbound.Protocol == "shadowsocks" {
+			} else if inbound.Protocol.KeysClientsByEmail() {
 				clientId = oldClient.Email
 			} else {
 				clientId = oldClient.ID
@@ -1510,7 +1506,7 @@ func (s *InboundService) ResetClientTrafficLimitByEmail(clientEmail string, tota
 		if oldClient.Email == clientEmail {
 			if inbound.Protocol == "trojan" {
 				clientId = oldClient.Password
-			} else if inbound.Protocol == "shadowsocks" {
+			} else if inbound.Protocol.KeysClientsByEmail() {
 				clientId = oldClient.Email
 			} else {
 				clientId = oldClient.ID

@@ -25,6 +25,7 @@ var xrayTemplateConfig string
 
 var defaultValueMap = map[string]string{
 	"xrayTemplateConfig":          xrayTemplateConfig,
+	"sbcoreEgress":                "xray",
 	"webListen":                   "",
 	"webDomain":                   "",
 	"webPort":                     "2053",
@@ -421,6 +422,15 @@ func (s *SettingService) GetTimeLocation() (*time.Location, error) {
 		return time.LoadLocation(defaultLocation)
 	}
 	return location, nil
+}
+
+// GetSingboxEgress returns "xray" (route sbcore traffic through Xray) or "direct".
+func (s *SettingService) GetSingboxEgress() (string, error) {
+	egress, err := s.getString("sbcoreEgress")
+	if err != nil || egress != "direct" {
+		return "xray", err
+	}
+	return egress, nil
 }
 
 func (s *SettingService) GetSubEnable() (bool, error) {

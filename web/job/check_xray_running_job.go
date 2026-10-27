@@ -6,7 +6,8 @@ import (
 )
 
 type CheckXrayRunningJob struct {
-	xrayService service.XrayService
+	xrayService    service.XrayService
+	singboxService service.SingboxService
 
 	checkTime int
 }
@@ -16,6 +17,9 @@ func NewCheckXrayRunningJob() *CheckXrayRunningJob {
 }
 
 func (j *CheckXrayRunningJob) Run() {
+	if j.singboxService.NeedsRestart() {
+		service.RequestSingboxApply()
+	}
 	if j.xrayService.IsXrayRunning() {
 		j.checkTime = 0
 	} else {

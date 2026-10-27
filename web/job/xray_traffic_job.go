@@ -14,6 +14,7 @@ type XrayTrafficJob struct {
 	xrayService     service.XrayService
 	inboundService  service.InboundService
 	outboundService service.OutboundService
+	singboxService  service.SingboxService
 }
 
 func NewXrayTrafficJob() *XrayTrafficJob {
@@ -21,11 +22,22 @@ func NewXrayTrafficJob() *XrayTrafficJob {
 }
 
 func (j *XrayTrafficJob) Run() {
-	if !j.xrayService.IsXrayRunning() {
-		return
+	var traffics []*xray.Traffic
+	var clientTraffics []*xray.ClientTraffic
+	collected := false
+	if j.xrayService.IsXrayRunning() {
+		if t, c, err := j.xrayService.GetXrayTraffic(); err == nil {
+			traffics, clientTraffics, collected = t, c, true
+		}
 	}
-	traffics, clientTraffics, err := j.xrayService.GetXrayTraffic()
-	if err != nil {
+	if t, c, err := j.singboxService.GetTraffic(); err == nil {
+		traffics = append(traffics, t...)
+		clientTraffics = append(clientTraffics, c...)
+		collected = true
+	}
+	// Also catches clients disabled by quota or expiry since the last run.
+	service.RequestSingboxApply()
+	if !collected {
 		return
 	}
 	err, needRestart0 := j.inboundService.AddTraffic(traffics, clientTraffics)

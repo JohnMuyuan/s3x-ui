@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 
 	"x-ui/util/json_util"
 	"x-ui/xray"
@@ -18,7 +19,49 @@ const (
 	Shadowsocks Protocol = "shadowsocks"
 	Socks       Protocol = "socks"
 	WireGuard   Protocol = "wireguard"
+
+	// Served by the sbcore sing-box sidecar, not by Xray.
+	AnyTLS    Protocol = "anytls"
+	Hysteria  Protocol = "hysteria"
+	Hysteria2 Protocol = "hysteria2"
+	TUIC      Protocol = "tuic"
+	Naive     Protocol = "naive"
+	ShadowTLS Protocol = "shadowtls"
+	Snell     Protocol = "snell"
 )
+
+// SingboxTagPrefix marks inbounds that live in sbcore, so Xray API calls on
+// their tags can be routed there without a database lookup.
+const SingboxTagPrefix = "sb-"
+
+func (p Protocol) IsSingbox() bool {
+	switch p {
+	case AnyTLS, Hysteria, Hysteria2, TUIC, Naive, ShadowTLS, Snell:
+		return true
+	}
+	return false
+}
+
+// KeysClientsByEmail reports protocols whose clients are addressed by email
+// rather than by id or password in client edit and delete calls.
+func (p Protocol) KeysClientsByEmail() bool {
+	return p == Shadowsocks || p.IsSingbox()
+}
+
+func IsSingboxTag(tag string) bool {
+	return strings.HasPrefix(tag, SingboxTagPrefix)
+}
+
+func InboundTag(listen string, port int, protocol Protocol) string {
+	tag := fmt.Sprintf("inbound-%v", port)
+	if listen != "" && listen != "0.0.0.0" && listen != "::" && listen != "::0" {
+		tag = fmt.Sprintf("inbound-%v:%v", listen, port)
+	}
+	if protocol.IsSingbox() {
+		tag = SingboxTagPrefix + tag
+	}
+	return tag
+}
 
 type User struct {
 	Id       int    `json:"id" gorm:"primaryKey;autoIncrement"`

@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"x-ui/logger"
+	"x-ui/singbox"
+	"x-ui/util/json_util"
 	"x-ui/xray"
 
 	"go.uber.org/atomic"
@@ -78,8 +80,13 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	hasSingbox := false
 	for _, inbound := range inbounds {
 		if !inbound.Enable {
+			continue
+		}
+		if inbound.Protocol.IsSingbox() {
+			hasSingbox = true
 			continue
 		}
 		// get settings clients
@@ -160,7 +167,40 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		inboundConfig := inbound.GenXrayInboundConfig()
 		xrayConfig.InboundConfigs = append(xrayConfig.InboundConfigs, *inboundConfig)
 	}
+	if hasSingbox {
+		egress, err := s.settingService.GetSingboxEgress()
+		if err != nil {
+			return nil, err
+		}
+		if egress == singbox.EgressXray {
+			bridge, err := singboxBridgeInbound()
+			if err != nil {
+				return nil, err
+			}
+			xrayConfig.InboundConfigs = append(xrayConfig.InboundConfigs, *bridge)
+		}
+	}
 	return xrayConfig, nil
+}
+
+func singboxBridgeInbound() (*xray.InboundConfig, error) {
+	b := singbox.BridgeInbound()
+	settings, err := json.Marshal(b["settings"])
+	if err != nil {
+		return nil, err
+	}
+	sniffing, err := json.Marshal(b["sniffing"])
+	if err != nil {
+		return nil, err
+	}
+	return &xray.InboundConfig{
+		Listen:   json_util.RawMessage(`"127.0.0.1"`),
+		Port:     singbox.BridgePort,
+		Protocol: "socks",
+		Settings: json_util.RawMessage(settings),
+		Tag:      b["tag"].(string),
+		Sniffing: json_util.RawMessage(sniffing),
+	}, nil
 }
 
 func (s *XrayService) GetXrayTraffic() ([]*xray.Traffic, []*xray.ClientTraffic, error) {
@@ -194,6 +234,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 	if s.IsXrayRunning() {
 		if !isForce && p.GetConfig().Equals(xrayConfig) {
 			logger.Debug("It does not need to restart xray")
+			RequestSingboxApply()
 			return nil
 		}
 		p.Stop()
@@ -202,6 +243,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 	p = xray.NewProcess(xrayConfig)
 	result = ""
 	err = p.Start()
+	RequestSingboxApply()
 	if err != nil {
 		return err
 	}
