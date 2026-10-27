@@ -1,4 +1,8 @@
 {{define "form/client"}}
+<style>
+    .external-link { margin-top: 8px; }
+    .external-link .ant-input-group + .ant-input-group { margin-top: 4px; }
+</style>
 <a-form layout="horizontal" v-if="client" :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
     <a-form-item label='{{ i18n "pages.inbounds.enable" }}'>
         <a-switch v-model="client.enable"></a-switch>
@@ -99,6 +103,32 @@
     </a-form-item>
     <a-form-item v-if="client.email" label='{{ i18n "comment" }}'>
         <a-input v-model.trim="client.comment"></a-input>
+    </a-form-item>
+    <a-form-item v-if="client.email && app.subSettings.enable">
+        <template slot="label">
+            <a-tooltip>
+                <template slot="title">
+                    <span>{{ i18n "pages.inbounds.externalLinksDesc" }}</span>
+                </template>
+                {{ i18n "pages.inbounds.externalLinks" }}
+                <a-icon type="question-circle"></a-icon>
+            </a-tooltip>
+        </template>
+        <a-button icon="plus" size="small" @click="client.externalLinks.push({ kind: 'link', value: '', remark: '' })"></a-button>
+        <div v-for="(link, i) in client.externalLinks" :key="i" class="external-link">
+            <a-input-group compact>
+                <a-select v-model="link.kind" :style="{ width: '32%' }" :dropdown-class-name="themeSwitcher.currentTheme">
+                    <a-select-option value="link">{{ i18n "pages.inbounds.externalLink" }}</a-select-option>
+                    <a-select-option value="sub">{{ i18n "pages.inbounds.externalSub" }}</a-select-option>
+                </a-select>
+                <a-input v-model.trim="link.value" :style="{ width: '68%' }" :placeholder="link.kind === 'sub' ? 'https://' : 'vless:// hysteria2:// ...'"></a-input>
+            </a-input-group>
+            <a-input-group compact>
+                <a-input v-model.trim="link.remark" :style="{ width: 'calc(100% - 32px)' }"
+                    :placeholder="link.kind === 'sub' ? '{{ i18n "pages.inbounds.externalSubRemark" }}' : '{{ i18n "pages.inbounds.externalLinkRemark" }}'"></a-input>
+                <a-button icon="delete" @click="client.externalLinks.splice(i, 1)"></a-button>
+            </a-input-group>
+        </div>
     </a-form-item>
     <a-form-item v-if="app.ipLimitEnable && !OTHER_PROTOCOLS.includes(inbound.protocol)">
         <template slot="label">

@@ -38,6 +38,20 @@ function keysClientsByEmail(protocol) {
     return isSingboxProtocol(protocol) || protocol === Protocols.MASQUE || OTHER_PROTOCOLS.includes(protocol);
 }
 
+// A client's extra subscription entries: kind 'link' is a share link passed on
+// as is (renamed by its remark), 'sub' a subscription URL the panel fetches and
+// merges in (its remark prefixing each node's name).
+function withExternalLinks(client, links) {
+    client.externalLinks = Array.isArray(links)
+        ? links.map(l => ({ kind: l.kind === 'sub' ? 'sub' : 'link', value: l.value || '', remark: l.remark || '' }))
+        : [];
+    return client;
+}
+
+function externalLinkValid(link) {
+    return link.kind === 'sub' ? /^https?:\/\/\S+$/i.test(link.value) : /^[a-z][a-z0-9+.-]*:\/\/\S+$/i.test(link.value);
+}
+
 // A fresh password for such a client; an MTProto client's is its 16-byte key.
 function randomClientPassword(protocol) {
     return protocol === Protocols.MTPROTO ? RandomUtil.randomSeq(32, { type: 'hex' }) : RandomUtil.randomSeq(16);
@@ -2138,10 +2152,11 @@ Inbound.VmessSettings.VMESS = class extends XrayCommonClass {
         this.subId = subId;
         this.comment = comment;
         this.reset = reset;
+        this.externalLinks = [];
     }
 
     static fromJson(json = {}) {
-        return new Inbound.VmessSettings.VMESS(
+        return withExternalLinks(new Inbound.VmessSettings.VMESS(
             json.id,
             json.security,
             json.email,
@@ -2153,7 +2168,7 @@ Inbound.VmessSettings.VMESS = class extends XrayCommonClass {
             json.subId,
             json.comment,
             json.reset,
-        );
+        ), json.externalLinks);
     }
     get _expiryTime() {
         if (this.expiryTime === 0 || this.expiryTime === "") {
@@ -2268,10 +2283,11 @@ Inbound.VLESSSettings.VLESS = class extends XrayCommonClass {
         this.subId = subId;
         this.comment = comment;
         this.reset = reset;
+        this.externalLinks = [];
     }
 
     static fromJson(json = {}) {
-        return new Inbound.VLESSSettings.VLESS(
+        return withExternalLinks(new Inbound.VLESSSettings.VLESS(
             json.id,
             json.flow,
             json.email,
@@ -2283,7 +2299,7 @@ Inbound.VLESSSettings.VLESS = class extends XrayCommonClass {
             json.subId,
             json.comment,
             json.reset,
-        );
+        ), json.externalLinks);
     }
 
     get _expiryTime() {
@@ -2406,10 +2422,11 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
         this.subId = subId;
         this.comment = comment;
         this.reset = reset;
+        this.externalLinks = [];
     }
 
     toJson() {
-        return {
+        const json = {
             password: this.password,
             email: this.email,
             limitIp: this.limitIp,
@@ -2421,10 +2438,12 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
             comment: this.comment,
             reset: this.reset,
         };
+        if (this.externalLinks.length) json.externalLinks = this.externalLinks;
+        return json;
     }
 
     static fromJson(json = {}) {
-        return new Inbound.TrojanSettings.Trojan(
+        return withExternalLinks(new Inbound.TrojanSettings.Trojan(
             json.password,
             json.email,
             json.limitIp,
@@ -2435,7 +2454,7 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
             json.subId,
             json.comment,
             json.reset,
-        );
+        ), json.externalLinks);
     }
 
     get _expiryTime() {
@@ -2568,10 +2587,11 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
         this.subId = subId;
         this.comment = comment;
         this.reset = reset;
+        this.externalLinks = [];
     }
 
     toJson() {
-        return {
+        const json = {
             method: this.method,
             password: this.password,
             email: this.email,
@@ -2584,10 +2604,12 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
             comment: this.comment,
             reset: this.reset,
         };
+        if (this.externalLinks.length) json.externalLinks = this.externalLinks;
+        return json;
     }
 
     static fromJson(json = {}) {
-        return new Inbound.ShadowsocksSettings.Shadowsocks(
+        return withExternalLinks(new Inbound.ShadowsocksSettings.Shadowsocks(
             json.method,
             json.password,
             json.email,
@@ -2599,7 +2621,7 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
             json.subId,
             json.comment,
             json.reset,
-        );
+        ), json.externalLinks);
     }
 
     get _expiryTime() {
@@ -3100,6 +3122,7 @@ Inbound.SingboxSettings.Client = class extends XrayCommonClass {
         this.subId = subId;
         this.comment = comment;
         this.reset = reset;
+        this.externalLinks = [];
     }
 
     toJson() {
@@ -3115,12 +3138,13 @@ Inbound.SingboxSettings.Client = class extends XrayCommonClass {
             comment: this.comment,
             reset: this.reset,
         };
+        if (this.externalLinks.length) json.externalLinks = this.externalLinks;
         if (this.id) json.id = this.id;
         return json;
     }
 
     static fromJson(protocol, json = {}) {
-        return new Inbound.SingboxSettings.Client(
+        return withExternalLinks(new Inbound.SingboxSettings.Client(
             protocol,
             json.email,
             json.password,
@@ -3133,7 +3157,7 @@ Inbound.SingboxSettings.Client = class extends XrayCommonClass {
             json.subId,
             json.comment,
             json.reset,
-        );
+        ), json.externalLinks);
     }
 
     get _expiryTime() {
@@ -3261,8 +3285,8 @@ Inbound.AmneziaWGSettings.Client = class extends Inbound.SingboxSettings.Client 
     }
 
     static fromJson(protocol, json = {}) {
-        return new Inbound.AmneziaWGSettings.Client(protocol, json.email, json.privateKey, json.preSharedKey, json.address,
-            json.limitIp, json.totalGB, json.expiryTime, json.enable, json.tgId, json.subId, json.comment, json.reset);
+        return withExternalLinks(new Inbound.AmneziaWGSettings.Client(protocol, json.email, json.privateKey, json.preSharedKey, json.address,
+            json.limitIp, json.totalGB, json.expiryTime, json.enable, json.tgId, json.subId, json.comment, json.reset), json.externalLinks);
     }
 
     toJson() {

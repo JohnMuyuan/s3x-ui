@@ -29,6 +29,12 @@
                 Vue.prototype.$message.error('{{ i18n "pages.inbounds.mtprotoKeyInvalid" }}');
                 return;
             }
+            const client = clientModalApp.client;
+            client.externalLinks = client.externalLinks.filter(l => l.value);
+            if (!client.externalLinks.every(externalLinkValid)) {
+                Vue.prototype.$message.error('{{ i18n "pages.inbounds.externalLinkInvalid" }}');
+                return;
+            }
             if (clientModal.isEdit) {
                 ObjectUtil.execute(clientModal.confirm, clientModalApp.client, clientModal.dbInbound.id, clientModal.oldClientId);
             } else {

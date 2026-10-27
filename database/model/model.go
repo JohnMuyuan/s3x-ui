@@ -166,4 +166,15 @@ type Client struct {
 	SubID      string `json:"subId" form:"subId"`
 	Comment    string `json:"comment" form:"comment"`
 	Reset      int    `json:"reset" form:"reset"`
+
+	ExternalLinks []ClientExternalLink `json:"externalLinks,omitempty"`
+}
+
+// ClientExternalLink is an extra node in a client's subscription: a share link
+// passed on as is ("link"), or a subscription URL whose links the panel fetches
+// and merges in ("sub"). Remark renames a link, and prefixes a subscription's.
+type ClientExternalLink struct {
+	Kind   string `json:"kind"`
+	Value  string `json:"value"`
+	Remark string `json:"remark"`
 }

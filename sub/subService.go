@@ -40,6 +40,7 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 	var header string
 	var traffic xray.ClientTraffic
 	var clientTraffics []xray.ClientTraffic
+	var external []model.ClientExternalLink
 	inbounds, err := s.getInboundsBySubId(subId)
 	if err != nil {
 		return nil, "", err
@@ -73,10 +74,17 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, string, error
 			if client.Enable && client.SubID == subId {
 				link := s.getLink(inbound, client.Email)
 				result = append(result, link)
-				clientTraffics = append(clientTraffics, s.getClientTraffics(inbound.ClientStats, client.Email))
+				stats := s.getClientTraffics(inbound.ClientStats, client.Email)
+				clientTraffics = append(clientTraffics, stats)
+				// the panel's own nodes refuse a client that is out of traffic or
+				// expired; third-party ones would not, so they go with it
+				if stats.Enable {
+					external = append(external, client.ExternalLinks...)
+				}
 			}
 		}
 	}
+	result = append(result, externalLinks(external)...)
 
 	// Prepare statistics
 	for index, clientTraffic := range clientTraffics {
