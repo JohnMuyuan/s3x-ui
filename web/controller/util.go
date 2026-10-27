@@ -81,9 +81,14 @@ func html(c *gin.Context, name string, title string, data gin.H) {
 	c.HTML(http.StatusOK, name, getContext(data))
 }
 
+// AssetsVersion tags asset URLs. Assets are cached for a year and the display
+// version stays at the 2.6.2 base, so the tag must follow the asset content.
+var AssetsVersion = config.GetVersion()
+
 func getContext(h gin.H) gin.H {
 	a := gin.H{
-		"cur_ver": config.GetVersion(),
+		"cur_ver":   config.GetVersion(),
+		"asset_ver": AssetsVersion,
 	}
 	for key, value := range h {
 		a[key] = value

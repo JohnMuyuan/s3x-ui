@@ -9,8 +9,14 @@
     </a-form-item>
 
     <a-form-item label='{{ i18n "protocol" }}'>
-        <a-select v-model="inbound.protocol" :disabled="isEdit" :dropdown-class-name="themeSwitcher.currentTheme">
-            <a-select-option v-for="p in Protocols" :key="p" :value="p">[[ p ]]</a-select-option>
+        <a-select v-model="inbound.protocol" :disabled="isEdit" :dropdown-class-name="themeSwitcher.currentTheme"
+            :dropdown-menu-style="{ maxHeight: '600px' }">
+            <a-select-opt-group label="Xray">
+                <a-select-option v-for="p in Object.values(Protocols).filter(p => !isSingboxProtocol(p))" :key="p" :value="p">[[ p ]]</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="sing-box">
+                <a-select-option v-for="p in SINGBOX_PROTOCOLS" :key="p" :value="p">[[ p ]]</a-select-option>
+            </a-select-opt-group>
         </a-select>
     </a-form-item>
 

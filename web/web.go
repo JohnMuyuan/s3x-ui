@@ -2,8 +2,10 @@ package web
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"embed"
+	"encoding/hex"
 	"html/template"
 	"io"
 	"io/fs"
@@ -36,6 +38,29 @@ var assetsFS embed.FS
 
 //go:embed html/*
 var htmlFS embed.FS
+
+// assetsVersion appends a digest of the embedded assets to the version, so
+// browsers holding year-long cached assets fetch them again after an update.
+func assetsVersion() string {
+	h := sha256.New()
+	err := fs.WalkDir(assetsFS, "assets", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		data, err := assetsFS.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		io.WriteString(h, path)
+		h.Write(data)
+		return nil
+	})
+	if err != nil {
+		logger.Warning("hashing assets failed:", err)
+		return config.GetVersion()
+	}
+	return config.GetVersion() + "-" + hex.EncodeToString(h.Sum(nil))[:8]
+}
 
 //go:embed translation/*
 var i18nFS embed.FS
@@ -190,6 +215,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 			c.Header("Cache-Control", "max-age=31536000")
 		}
 	})
+	controller.AssetsVersion = assetsVersion()
 
 	// init i18n
 	err = locale.InitLocalizer(i18nFS, &s.settingService)
