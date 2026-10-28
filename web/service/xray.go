@@ -8,7 +8,6 @@ import (
 	"x-ui/database/model"
 	"x-ui/logger"
 	"x-ui/singbox"
-	"x-ui/util/json_util"
 	"x-ui/xray"
 
 	"go.uber.org/atomic"
@@ -92,13 +91,8 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	hasSingbox := false
 	for _, inbound := range inbounds {
-		if !inbound.Enable {
-			continue
-		}
-		if inbound.Protocol.IsSidecar() {
-			hasSingbox = true
+		if !inbound.Enable || inbound.Protocol.IsSidecar() {
 			continue
 		}
 		inboundConfig, err := XrayInboundConfig(inbound)
@@ -109,17 +103,18 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		}
 		xrayConfig.InboundConfigs = append(xrayConfig.InboundConfigs, *inboundConfig)
 	}
-	if hasSingbox {
+	if users := bridgeUsers(inbounds); len(users) > 0 {
 		egress, err := s.settingService.GetSingboxEgress()
 		if err != nil {
 			return nil, err
 		}
 		if egress == singbox.EgressXray {
-			bridge, err := singboxBridgeInbound()
+			bridge, err := singboxBridgeInbound(users)
 			if err != nil {
 				return nil, err
 			}
 			xrayConfig.InboundConfigs = append(xrayConfig.InboundConfigs, *bridge)
+			xrayConfig.RouterConfig = routeBridgedInbounds(xrayConfig.RouterConfig, users)
 		}
 	}
 	if target, err := s.settingService.GetPanelOutbound(); err == nil && target != "" {
@@ -127,26 +122,6 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	}
 	injectOutboundProbe(xrayConfig)
 	return xrayConfig, nil
-}
-
-func singboxBridgeInbound() (*xray.InboundConfig, error) {
-	b := singbox.BridgeInbound()
-	settings, err := json.Marshal(b["settings"])
-	if err != nil {
-		return nil, err
-	}
-	sniffing, err := json.Marshal(b["sniffing"])
-	if err != nil {
-		return nil, err
-	}
-	return &xray.InboundConfig{
-		Listen:   json_util.RawMessage(`"127.0.0.1"`),
-		Port:     singbox.BridgePort,
-		Protocol: "socks",
-		Settings: json_util.RawMessage(settings),
-		Tag:      b["tag"].(string),
-		Sniffing: json_util.RawMessage(sniffing),
-	}, nil
 }
 
 func (s *XrayService) GetXrayTraffic() ([]*xray.Traffic, []*xray.ClientTraffic, error) {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -30,12 +31,13 @@ func (s *MtprotoService) Apply() error {
 	if err != nil {
 		return err
 	}
-	proxy := ""
-	if egress == singbox.EgressXray {
-		proxy = fmt.Sprintf("socks5://%s:%s@127.0.0.1:%d", singbox.BridgeUser, singbox.BridgePassword, singbox.BridgePort)
-	}
 	var desired []mtproto.Instance
 	for _, ib := range inbounds {
+		// mtg logs in to Xray's bridge as its inbound, for Xray's routing.
+		proxy := ""
+		if egress == singbox.EgressXray {
+			proxy = fmt.Sprintf("socks5://%s:%s@127.0.0.1:%d", url.PathEscape(ib.Tag), singbox.BridgePassword, singbox.BridgePort)
+		}
 		inst, problems, ok := mtproto.FromInbound(ib, proxy)
 		if joined := strings.Join(problems, "; "); joined != mtSkipped[ib.Tag] {
 			if joined != "" {

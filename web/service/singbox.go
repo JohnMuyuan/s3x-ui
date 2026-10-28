@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"os"
 	"reflect"
+	"slices"
 	"sync"
 	"time"
 
@@ -276,36 +278,51 @@ func applyDiff(api *singbox.API, d *sbDesired) error {
 	return nil
 }
 
-// ensureXrayBridge hot-adds the bridge inbound when sbcore starts egressing
-// through an Xray that was started before any sing-box inbound existed.
+// ensureXrayBridge keeps the running Xray's bridge inbound in step with the
+// bridged inbounds: hot-added when sbcore starts egressing through an Xray
+// started before any of them existed, and replaced when its logins change
+// (an inbound added, removed or switched), so a new inbound can log in.
 func ensureXrayBridge(egress string) {
 	if egress != singbox.EgressXray || p == nil || !p.IsRunning() {
 		return
 	}
-	running := p.GetConfig()
-	for _, ib := range running.InboundConfigs {
-		if ib.Tag == singbox.BridgeTag {
-			return
-		}
+	inbounds, err := new(InboundService).GetAllInbounds()
+	if err != nil {
+		return
 	}
-	bridge, err := singboxBridgeInbound()
+	bridge, err := singboxBridgeInbound(bridgeUsers(inbounds))
+	if err != nil {
+		return
+	}
+	running := p.GetConfig()
+	at := slices.IndexFunc(running.InboundConfigs, func(ib xray.InboundConfig) bool { return ib.Tag == singbox.BridgeTag })
+	if at >= 0 && bytes.Equal(running.InboundConfigs[at].Settings, bridge.Settings) {
+		return
+	}
+	raw, err := json.Marshal(bridge)
 	if err == nil {
-		var raw []byte
-		if raw, err = json.Marshal(bridge); err == nil {
-			var api xray.XrayAPI
-			if err = api.Init(p.GetAPIPort()); err == nil {
-				err = api.AddInbound(raw)
-				api.Close()
+		var api xray.XrayAPI
+		if err = api.Init(p.GetAPIPort()); err == nil {
+			if at >= 0 {
+				err = api.DelInbound(singbox.BridgeTag)
 			}
+			if err == nil {
+				err = api.AddInbound(raw)
+			}
+			api.Close()
 		}
 	}
 	if err != nil {
-		logger.Warning("sbcore: adding Xray bridge inbound failed, restarting Xray:", err)
+		logger.Warning("sbcore: updating Xray bridge inbound failed, restarting Xray:", err)
 		new(XrayService).SetToNeedRestart()
 		return
 	}
 	// Keep the recorded config in step so the next restart check sees no change.
-	running.InboundConfigs = append(running.InboundConfigs, *bridge)
+	if at >= 0 {
+		running.InboundConfigs[at] = *bridge
+	} else {
+		running.InboundConfigs = append(running.InboundConfigs, *bridge)
+	}
 }
 
 func replaceInbound(api *singbox.API, tag, want string) error {

@@ -335,7 +335,8 @@ func BuildConfig(inbounds []map[string]any, egress string, logLevel string) map[
 		"inbounds": inbounds,
 		"outbounds": []map[string]any{
 			{
-				"type": "socks", "tag": bridgeOutboundTag, "version": "5",
+				// sbcore's socks variant: it logs in as each connection's inbound.
+				"type": "xray-bridge", "tag": bridgeOutboundTag,
 				"server": "127.0.0.1", "server_port": BridgePort,
 				"username": BridgeUser, "password": BridgePassword,
 			},
@@ -346,7 +347,13 @@ func BuildConfig(inbounds []map[string]any, egress string, logLevel string) map[
 }
 
 // BridgeInbound is the Xray inbound that receives sbcore's egress traffic.
-func BridgeInbound() map[string]any {
+// Besides sbcore's own login it takes one per bridged inbound (see
+// sbcore's xray-bridge outbound), all with the same password.
+func BridgeInbound(logins []string) map[string]any {
+	accounts := []map[string]any{{"user": BridgeUser, "pass": BridgePassword}}
+	for _, login := range logins {
+		accounts = append(accounts, map[string]any{"user": login, "pass": BridgePassword})
+	}
 	return map[string]any{
 		"tag":      BridgeTag,
 		"listen":   "127.0.0.1",
@@ -354,7 +361,7 @@ func BridgeInbound() map[string]any {
 		"protocol": "socks",
 		"settings": map[string]any{
 			"auth":     "password",
-			"accounts": []map[string]any{{"user": BridgeUser, "pass": BridgePassword}},
+			"accounts": accounts,
 			"udp":      true,
 			"ip":       "127.0.0.1",
 		},

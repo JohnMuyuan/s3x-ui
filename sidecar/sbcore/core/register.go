@@ -2,6 +2,7 @@ package core
 
 import (
 	suiAnytls "github.com/JohnMuyuan/s3x-ui/sidecar/sbcore/core/protocol/anytls"
+	"github.com/JohnMuyuan/s3x-ui/sidecar/sbcore/core/protocol/bridge"
 	suiHysteria "github.com/JohnMuyuan/s3x-ui/sidecar/sbcore/core/protocol/hysteria"
 	suiHysteria2 "github.com/JohnMuyuan/s3x-ui/sidecar/sbcore/core/protocol/hysteria2"
 	suiSnell "github.com/JohnMuyuan/s3x-ui/sidecar/sbcore/core/protocol/snell"
@@ -43,13 +44,15 @@ func InboundRegistry() *inbound.Registry {
 	return registry
 }
 
-// socks carries traffic back into Xray so the panel's routing applies.
+// bridge (and plain socks) carries traffic back into Xray so the panel's
+// routing applies.
 func OutboundRegistry() *outbound.Registry {
 	registry := outbound.NewRegistry()
 
 	direct.RegisterOutbound(registry)
 	block.RegisterOutbound(registry)
 	socks.RegisterOutbound(registry)
+	bridge.RegisterOutbound(registry)
 
 	return registry
 }
