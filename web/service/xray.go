@@ -82,7 +82,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	xrayConfig.OutboundConfigs = pinWireguardEndpointFamily(dropAllowInsecure(appendSubscriptionOutbounds(xrayConfig.OutboundConfigs)))
+	xrayConfig.OutboundConfigs = pinWireguardEndpointFamily(dropAllowInsecure(dropPlaintextOutbounds(appendSubscriptionOutbounds(xrayConfig.OutboundConfigs))))
 	xrayConfig.Policy = withUserOnline(xrayConfig.Policy)
 
 	s.inboundService.AddTraffic(nil, nil)
