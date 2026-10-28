@@ -14,6 +14,7 @@ import (
 	"x-ui/logger"
 	"x-ui/sub"
 	"x-ui/util/crypto"
+	"x-ui/util/sys"
 	"x-ui/web"
 	"x-ui/web/global"
 	"x-ui/web/service"
@@ -45,6 +46,10 @@ func runWebServer() {
 	err := database.InitDB(config.GetDBPath())
 	if err != nil {
 		log.Fatalf("Error initializing database: %v", err)
+	}
+
+	if strays := sys.KillStrays(config.GetBinFolderPath()); len(strays) > 0 {
+		logger.Warning("stopped processes a previous panel left running:", strays)
 	}
 
 	var server *web.Server

@@ -28,9 +28,9 @@ func InitLogger(level logging.Level) {
 	var format logging.Formatter
 	ppid := os.Getppid()
 
+	// Without a syslog daemon (a container, a bare Alpine), log to stderr.
 	backend, err = logging.NewSyslogBackend("")
 	if err != nil {
-		println(err)
 		backend = logging.NewLogBackend(os.Stderr, "", 0)
 	}
 	if ppid > 0 && err != nil {

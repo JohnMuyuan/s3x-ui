@@ -57,7 +57,10 @@ jobs:
           if [ "${{ matrix.platform }}" == "arm64" ]; then
             export CC=aarch64-linux-gnu-gcc
           fi
-          go build -ldflags "-w -s" -o xui-release -v main.go
+          # Static, so one build runs on glibc systems and on Alpine (musl).
+          go build -tags "netgo osusergo sqlite_omit_load_extension" \
+            -ldflags "-w -s -linkmode external -extldflags -static" -o xui-release -v main.go
+          file xui-release | tee /dev/stderr | grep -q 'statically linked'
 
       - name: Build sbcore
         run: |
@@ -68,7 +71,7 @@ jobs:
         run: |
           mkdir -p x-ui/bin
           mv xui-release x-ui/x-ui
-          cp x-ui.service x-ui.sh x-ui/
+          cp x-ui.service x-ui.rc x-ui.sh x-ui/
           mv sbcore-linux-${{ matrix.platform }} x-ui/bin/
           cd x-ui/bin
 

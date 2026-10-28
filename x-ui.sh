@@ -38,6 +38,25 @@ echo "The OS release is: $release"
 os_version=""
 os_version=$(grep "^VERSION_ID" /etc/os-release | cut -d '=' -f2 | tr -d '"' | tr -d '.')
 
+# service_ctl <start|stop|restart|enable|disable|status|is-active> <service>
+# runs systemd's systemctl, or OpenRC's rc-service and rc-update on Alpine.
+service_ctl() {
+    if [[ $release == "alpine" ]]; then
+        case "$1" in
+        enable) rc-update add "$2" default ;;
+        disable) rc-update del "$2" default ;;
+        is-active) rc-service "$2" status 2>/dev/null | grep -q started ;;
+        *) rc-service "$2" "$1" ;;
+        esac
+    else
+        case "$1" in
+        is-active) systemctl is-active --quiet "$2" ;;
+        status) systemctl status "$2" -l ;;
+        *) systemctl "$1" "$2" ;;
+        esac
+    fi
+}
+
 # Declare Variables
 log_folder="${XUI_LOG_FOLDER:=/var/log}"
 iplimit_log_path="${log_folder}/3xipl.log"
@@ -156,11 +175,15 @@ uninstall() {
         fi
         return 0
     fi
-    systemctl stop x-ui
-    systemctl disable x-ui
-    rm /etc/systemd/system/x-ui.service -f
-    systemctl daemon-reload
-    systemctl reset-failed
+    service_ctl stop x-ui
+    service_ctl disable x-ui
+    if [[ $release == "alpine" ]]; then
+        rm /etc/init.d/x-ui -f
+    else
+        rm /etc/systemd/system/x-ui.service -f
+        systemctl daemon-reload
+        systemctl reset-failed
+    fi
     rm /etc/x-ui/ -rf
     rm /usr/local/x-ui/ -rf
 
@@ -289,7 +312,7 @@ start() {
         echo ""
         LOGI "Panel is running, No need to start again, If you need to restart, please select restart"
     else
-        systemctl start x-ui
+        service_ctl start x-ui
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
@@ -310,7 +333,7 @@ stop() {
         echo ""
         LOGI "Panel stopped, No need to stop again!"
     else
-        systemctl stop x-ui
+        service_ctl stop x-ui
         sleep 2
         check_status
         if [[ $? == 1 ]]; then
@@ -326,7 +349,7 @@ stop() {
 }
 
 restart() {
-    systemctl restart x-ui
+    service_ctl restart x-ui
     sleep 2
     check_status
     if [[ $? == 0 ]]; then
@@ -340,14 +363,14 @@ restart() {
 }
 
 status() {
-    systemctl status x-ui -l
+    service_ctl status x-ui
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
 }
 
 enable() {
-    systemctl enable x-ui
+    service_ctl enable x-ui
     if [[ $? == 0 ]]; then
         LOGI "x-ui Set to boot automatically on startup successfully"
     else
@@ -360,7 +383,7 @@ enable() {
 }
 
 disable() {
-    systemctl disable x-ui
+    service_ctl disable x-ui
     if [[ $? == 0 ]]; then
         LOGI "x-ui Autostart Cancelled successfully"
     else
@@ -383,14 +406,27 @@ show_log() {
         show_menu
         ;;
     1)
-        journalctl -u x-ui -e --no-pager -f -p debug
+        if [[ $release == "alpine" ]]; then
+            # The panel logs to syslog when one runs, else to its OpenRC log.
+            if [[ -f /var/log/messages ]] && grep -q "x-ui" /var/log/messages; then
+                tail -n 200 -f /var/log/messages | grep --line-buffered "x-ui"
+            else
+                tail -n 100 -f /var/log/x-ui.log
+            fi
+        else
+            journalctl -u x-ui -e --no-pager -f -p debug
+        fi
         if [[ $# == 0 ]]; then
             before_show_menu
         fi
         ;;
     2)
-        sudo journalctl --rotate
-        sudo journalctl --vacuum-time=1s
+        if [[ $release == "alpine" ]]; then
+            : >/var/log/x-ui.log
+        else
+            journalctl --rotate
+            journalctl --vacuum-time=1s
+        fi
         echo "All Logs cleared."
         restart
         ;;
@@ -406,7 +442,7 @@ show_banlog() {
 
     echo -e "${green}Checking ban logs...${plain}\n"
 
-    if ! systemctl is-active --quiet fail2ban; then
+    if ! service_ctl is-active fail2ban; then
         echo -e "${red}Fail2ban service is not running!${plain}\n"
         return 1
     fi
@@ -498,6 +534,9 @@ enable_bbr() {
     arch | manjaro | parch)
         pacman -Sy --noconfirm ca-certificates
         ;;
+    alpine)
+        apk add --no-cache ca-certificates
+        ;;
     *)
         echo -e "${red}Unsupported operating system. Please check the script and install the necessary packages manually.${plain}\n"
         exit 1
@@ -534,6 +573,12 @@ update_shell() {
 
 # 0: running, 1: not running, 2: not installed
 check_status() {
+    if [[ $release == "alpine" ]]; then
+        if [[ ! -f /etc/init.d/x-ui ]]; then
+            return 2
+        fi
+        service_ctl is-active x-ui && return 0 || return 1
+    fi
     if [[ ! -f /etc/systemd/system/x-ui.service ]]; then
         return 2
     fi
@@ -546,6 +591,9 @@ check_status() {
 }
 
 check_enabled() {
+    if [[ $release == "alpine" ]]; then
+        rc-update show default 2>/dev/null | grep -qw x-ui && return 0 || return 1
+    fi
     temp=$(systemctl is-enabled x-ui)
     if [[ "${temp}" == "enabled" ]]; then
         return 0
@@ -679,8 +727,12 @@ firewall_menu() {
 install_firewall() {
     if ! command -v ufw &>/dev/null; then
         echo "ufw firewall is not installed. Installing now..."
-        apt-get update
-        apt-get install -y ufw
+        if [[ $release == "alpine" ]]; then
+            apk add --no-cache ufw
+        else
+            apt-get update
+            apt-get install -y ufw
+        fi
     else
         echo "ufw firewall is already installed"
     fi
@@ -832,7 +884,7 @@ update_geo() {
         show_menu
         ;;
     1)
-        systemctl stop x-ui
+        service_ctl stop x-ui
         rm -f geoip.dat geosite.dat
         wget -N https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
         wget -N https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
@@ -840,7 +892,7 @@ update_geo() {
         restart
         ;;
     2)
-        systemctl stop x-ui
+        service_ctl stop x-ui
         rm -f geoip_IR.dat geosite_IR.dat
         wget -O geoip_IR.dat -N https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat
         wget -O geosite_IR.dat -N https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geosite.dat
@@ -848,7 +900,7 @@ update_geo() {
         restart
         ;;
     3)
-        systemctl stop x-ui
+        service_ctl stop x-ui
         rm -f geoip_RU.dat geosite_RU.dat
         wget -O geoip_RU.dat -N https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geoip.dat
         wget -O geosite_RU.dat -N https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geosite.dat
@@ -1018,6 +1070,9 @@ ssl_cert_issue() {
         ;;
     arch | manjaro | parch)
         pacman -Sy --noconfirm socat
+        ;;
+    alpine)
+        apk add --no-cache socat
         ;;
     *)
         echo -e "${red}Unsupported operating system. Please check the script and install the necessary packages manually.${plain}\n"
@@ -1443,7 +1498,7 @@ iplimit_main() {
         read -rp "Please enter new Ban Duration in Minutes [default 30]: " NUM
         if [[ $NUM =~ ^[0-9]+$ ]]; then
             create_iplimit_jails ${NUM}
-            systemctl restart fail2ban
+            service_ctl restart fail2ban
         else
             echo -e "${red}${NUM} is not a number! Please, try again.${plain}"
         fi
@@ -1492,11 +1547,11 @@ iplimit_main() {
         iplimit_main
         ;;
     8)
-        service fail2ban status
+        service_ctl status fail2ban
         iplimit_main
         ;;
     9)
-        systemctl restart fail2ban
+        service_ctl restart fail2ban
         iplimit_main
         ;;
     10)
@@ -1536,6 +1591,9 @@ install_iplimit() {
         arch | manjaro | parch)
             pacman -Syu --noconfirm fail2ban
             ;;
+        alpine)
+            apk add --no-cache fail2ban
+            ;;
         *)
             echo -e "${red}Unsupported operating system. Please check the script and install the necessary packages manually.${plain}\n"
             exit 1
@@ -1572,12 +1630,12 @@ install_iplimit() {
     create_iplimit_jails
 
     # Launching fail2ban
-    if ! systemctl is-active --quiet fail2ban; then
-        systemctl start fail2ban
+    if ! service_ctl is-active fail2ban; then
+        service_ctl start fail2ban
     else
-        systemctl restart fail2ban
+        service_ctl restart fail2ban
     fi
-    systemctl enable fail2ban
+    service_ctl enable fail2ban
 
     echo -e "${green}IP Limit installed and configured successfully!${plain}\n"
     before_show_menu
@@ -1593,13 +1651,13 @@ remove_iplimit() {
         rm -f /etc/fail2ban/filter.d/3x-ipl.conf
         rm -f /etc/fail2ban/action.d/3x-ipl.conf
         rm -f /etc/fail2ban/jail.d/3x-ipl.conf
-        systemctl restart fail2ban
+        service_ctl restart fail2ban
         echo -e "${green}IP Limit removed successfully!${plain}\n"
         before_show_menu
         ;;
     2)
         rm -rf /etc/fail2ban
-        systemctl stop fail2ban
+        service_ctl stop fail2ban
         case "${release}" in
         ubuntu | debian | armbian)
             apt-get remove -y fail2ban
@@ -1616,6 +1674,9 @@ remove_iplimit() {
             ;;
         arch | manjaro | parch)
             pacman -Rns --noconfirm fail2ban
+            ;;
+        alpine)
+            apk del fail2ban
             ;;
         *)
             echo -e "${red}Unsupported operating system. Please uninstall Fail2ban manually.${plain}\n"

@@ -36,18 +36,8 @@ arch() {
 
 echo "Arch: $(arch)"
 
-check_glibc_version() {
-    glibc_version=$(ldd --version | head -n1 | awk '{print $NF}')
-    
-    required_version="2.32"
-    if [[ "$(printf '%s\n' "$required_version" "$glibc_version" | sort -V | head -n1)" != "$required_version" ]]; then
-        echo -e "${red}GLIBC version $glibc_version is too old! Required: 2.32 or higher${plain}"
-        echo "Please upgrade to a newer version of your operating system to get a higher GLIBC version."
-        exit 1
-    fi
-    echo "GLIBC version: $glibc_version (meets requirement of 2.32+)"
-}
-check_glibc_version
+# The panel is linked statically, so it needs no particular libc: it runs on
+# glibc systems and on Alpine (musl) alike.
 
 install_base() {
     case "${release}" in
@@ -65,6 +55,10 @@ install_base() {
         ;;
     opensuse-tumbleweed)
         zypper refresh && zypper -q install -y wget curl tar timezone
+        ;;
+    alpine)
+        # GNU wget for -N; iproute2, ss and iptables for the panel itself.
+        apk update && apk add --no-cache bash wget curl tar tzdata ca-certificates openrc iproute2 iproute2-ss iptables ip6tables
         ;;
     *)
         apt-get update && apt install -y -q wget curl tar tzdata
@@ -173,7 +167,11 @@ install_x-ui() {
     fi
 
     if [[ -e /usr/local/x-ui/ ]]; then
-        systemctl stop x-ui
+        if [[ $release == "alpine" ]]; then
+            rc-service x-ui stop 2>/dev/null
+        else
+            systemctl stop x-ui
+        fi
         rm /usr/local/x-ui/ -rf
     fi
 
@@ -183,7 +181,12 @@ install_x-ui() {
     chmod +x x-ui
 
     chmod +x x-ui bin/xray-linux-$(arch) bin/sbcore-linux-$(arch) bin/mtg-linux-$(arch)
-    cp -f x-ui.service /etc/systemd/system/
+    if [[ $release == "alpine" ]]; then
+        cp -f x-ui.rc /etc/init.d/x-ui
+        chmod +x /etc/init.d/x-ui
+    else
+        cp -f x-ui.service /etc/systemd/system/
+    fi
     # The menu script ships in the release, so it always matches the binary.
     cp -f x-ui.sh /usr/bin/x-ui
     chmod +x /usr/local/x-ui/x-ui.sh
@@ -194,12 +197,21 @@ install_x-ui() {
     # jails set up by 3x-ui banned TCP only.
     if [[ -f /etc/fail2ban/action.d/3x-ipl.conf ]] && grep -q '^protocol = tcp$' /etc/fail2ban/action.d/3x-ipl.conf; then
         sed -i 's/^protocol = tcp$/protocol = all/' /etc/fail2ban/action.d/3x-ipl.conf
-        systemctl restart fail2ban
+        if [[ $release == "alpine" ]]; then
+            rc-service fail2ban restart
+        else
+            systemctl restart fail2ban
+        fi
     fi
 
-    systemctl daemon-reload
-    systemctl enable x-ui
-    systemctl start x-ui
+    if [[ $release == "alpine" ]]; then
+        rc-update add x-ui default
+        rc-service x-ui start
+    else
+        systemctl daemon-reload
+        systemctl enable x-ui
+        systemctl start x-ui
+    fi
     echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
     echo -e ""
     echo -e "┌───────────────────────────────────────────────────────┐

@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# OpenRC service for S3X-UI (Alpine), the counterpart of x-ui.service.
+
+name="x-ui"
+description="x-ui Service"
+command="/usr/local/x-ui/x-ui"
+directory="/usr/local/x-ui"
+supervisor="supervise-daemon"
+respawn_delay=5
+respawn_max=0
+output_log="/var/log/x-ui.log"
+error_log="/var/log/x-ui.log"
+
+export XRAY_VMESS_AEAD_FORCED=false
+
+depend() {
+    need net
+    after firewall
+}
