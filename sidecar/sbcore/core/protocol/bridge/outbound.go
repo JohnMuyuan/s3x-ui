@@ -1,7 +1,9 @@
 // Package bridge is sbcore's way back into Xray: a SOCKS5 outbound that logs
-// in as the tag of the inbound each connection came from, so the panel's Xray
-// routing can tell the sing-box inbounds apart (Xray takes a SOCKS username
-// as the user's email, which a routing rule's "user" matches).
+// in as the client each connection belongs to ("sbcore:" + its name, the
+// panel's client email), or as the inbound it came from when it has no
+// client, so the panel's Xray routing can tell sing-box inbounds and clients
+// apart (Xray takes a SOCKS username as the user's email, which a routing
+// rule's "user" matches).
 package bridge
 
 import (
@@ -21,6 +23,9 @@ import (
 )
 
 const Type = "xray-bridge"
+
+// clientPrefix matches the panel's singbox.BridgeClientPrefix.
+const clientPrefix = "sbcore:"
 
 func RegisterOutbound(registry *outbound.Registry) {
 	outbound.Register[option.SOCKSOutboundOptions](registry, Type, NewOutbound)
@@ -54,12 +59,16 @@ func NewOutbound(ctx context.Context, _ adapter.Router, logger log.ContextLogger
 	}, nil
 }
 
-// client logs in as the connection's inbound, or as the configured user when
-// the connection has none.
+// client logs in as the connection's client, else its inbound, else as the
+// configured user.
 func (h *Outbound) client(ctx context.Context) *socks.Client {
 	user := h.username
-	if metadata := adapter.ContextFrom(ctx); metadata != nil && metadata.Inbound != "" {
-		user = metadata.Inbound
+	if metadata := adapter.ContextFrom(ctx); metadata != nil {
+		if metadata.User != "" {
+			user = clientPrefix + metadata.User
+		} else if metadata.Inbound != "" {
+			user = metadata.Inbound
+		}
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()

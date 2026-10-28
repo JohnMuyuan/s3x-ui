@@ -20,6 +20,13 @@ const (
 	bridgeOutboundTag = "xray-bridge"
 	// BridgeTag is the Xray inbound receiving sbcore's egress.
 	BridgeTag = "sbcore-bridge"
+	// BridgeClientPrefix starts the login sbcore uses on the bridge for a
+	// connection of a client, before the client's email (see sbcore's
+	// xray-bridge outbound, which uses the same prefix).
+	BridgeClientPrefix = "sbcore:"
+	// bridgeUserLevel is a policy level of no stats: the clients' traffic is
+	// counted by sbcore, and must not be counted again under these logins.
+	bridgeUserLevel = 99
 )
 
 // optionKeys whitelists the settings keys passed through to sing-box per
@@ -347,8 +354,8 @@ func BuildConfig(inbounds []map[string]any, egress string, logLevel string) map[
 }
 
 // BridgeInbound is the Xray inbound that receives sbcore's egress traffic.
-// Besides sbcore's own login it takes one per bridged inbound (see
-// sbcore's xray-bridge outbound), all with the same password.
+// Besides sbcore's own login it takes one per bridged inbound and sing-box
+// client (see sbcore's xray-bridge outbound), all with the same password.
 func BridgeInbound(logins []string) map[string]any {
 	accounts := []map[string]any{{"user": BridgeUser, "pass": BridgePassword}}
 	for _, login := range logins {
@@ -360,10 +367,11 @@ func BridgeInbound(logins []string) map[string]any {
 		"port":     BridgePort,
 		"protocol": "socks",
 		"settings": map[string]any{
-			"auth":     "password",
-			"accounts": accounts,
-			"udp":      true,
-			"ip":       "127.0.0.1",
+			"auth":      "password",
+			"accounts":  accounts,
+			"udp":       true,
+			"ip":        "127.0.0.1",
+			"userLevel": bridgeUserLevel,
 		},
 		"sniffing": map[string]any{"enabled": true, "destOverride": []string{"http", "tls", "quic"}, "routeOnly": true},
 	}

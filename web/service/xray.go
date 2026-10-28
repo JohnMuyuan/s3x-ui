@@ -103,7 +103,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		}
 		xrayConfig.InboundConfigs = append(xrayConfig.InboundConfigs, *inboundConfig)
 	}
-	if users := bridgeUsers(inbounds); len(users) > 0 {
+	if users := bridgeUsers(inbounds); !users.empty() {
 		egress, err := s.settingService.GetSingboxEgress()
 		if err != nil {
 			return nil, err
