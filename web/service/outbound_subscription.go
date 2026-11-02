@@ -200,7 +200,7 @@ func xrayAccepts(ob map[string]any) error {
 	if err != nil {
 		return err
 	}
-	raw = dropAllowInsecure(raw)
+	raw, _ = redirectPlaintextOutbounds(dropAllowInsecure(raw))
 	var cfgs []conf.OutboundDetourConfig
 	if err := json.Unmarshal(raw, &cfgs); err != nil {
 		return err

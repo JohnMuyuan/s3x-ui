@@ -356,6 +356,7 @@ class TlsStreamSettings extends CommonClass {
         fingerprint = '',
         pinnedPeerCertSha256 = '',
         verifyPeerCertByName = '',
+        allowInsecure = false,
     ) {
         super();
         this.serverName = serverName;
@@ -365,6 +366,8 @@ class TlsStreamSettings extends CommonClass {
         // (comma separated, hex), or verify it against other names.
         this.pinnedPeerCertSha256 = pinnedPeerCertSha256;
         this.verifyPeerCertByName = verifyPeerCertByName;
+        // Kept for the panel, which pins such an outbound's certificate itself.
+        this.allowInsecure = allowInsecure;
     }
 
     static fromJson(json = {}) {
@@ -374,6 +377,7 @@ class TlsStreamSettings extends CommonClass {
             json.fingerprint,
             json.pinnedPeerCertSha256,
             json.verifyPeerCertByName,
+            json.allowInsecure,
         );
     }
 
@@ -384,6 +388,7 @@ class TlsStreamSettings extends CommonClass {
             fingerprint: this.fingerprint,
             pinnedPeerCertSha256: this.pinnedPeerCertSha256 || undefined,
             verifyPeerCertByName: this.verifyPeerCertByName || undefined,
+            allowInsecure: this.allowInsecure || undefined,
         };
     }
 }

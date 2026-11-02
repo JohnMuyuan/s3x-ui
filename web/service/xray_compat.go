@@ -11,9 +11,10 @@ import (
 
 // dropAllowInsecure removes "allowInsecure" from the outbounds' TLS settings.
 // Xray 26 refuses to start at all when it is true; outbounds saved by 3x-ui
-// 2.6.2 still carry it, and one of them would take every inbound down. Such an
-// outbound now verifies its certificate, so the warning points at the fields
-// that replace it.
+// 2.6.2 still carry it, and one of them would take every inbound down.
+// pinInsecureOutbounds has already handled those it could reach; the rest
+// verify their certificate, so the warning points at the fields that replace
+// it.
 func dropAllowInsecure(outbounds json_util.RawMessage) json_util.RawMessage {
 	if len(outbounds) == 0 {
 		return outbounds
