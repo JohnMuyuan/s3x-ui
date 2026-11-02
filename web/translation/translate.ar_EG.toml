@@ -110,7 +110,7 @@
 "accessLog" = "Access log"
 "accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "اختار النسخة اللي عايز تتحول لها."
-"xraySwitchClickDesk" = "اختار بحذر، النسخ القديمة ممكن ما تتوافقش مع الإعدادات الحالية."
+"xraySwitchClickDesk" = "اختار بحذر، النسخ القديمة ممكن ما تتوافقش مع الإعدادات الحالية. الإصدارات الرسمية المعروضة هنا لا تتضمن توافق REALITY الخاص بإصدار S3X مع عملاء sing-box و mihomo."
 "xrayStatusUnknown" = "مش معروف"
 "xrayStatusRunning" = "شغالة"
 "xrayStatusStop" = "متوقفة"

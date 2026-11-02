@@ -110,7 +110,7 @@
 "accessLog" = "存取日誌"
 "accessLogDesc" = "記錄每個連線的 Xray 存取日誌（access.log）。用戶端 IP 限制依賴它；關閉可減少磁碟寫入。切換後會重新啟動 Xray。"
 "xraySwitchClick" = "選擇你要切換到的版本"
-"xraySwitchClickDesk" = "請謹慎選擇，因為較舊版本可能與當前配置不相容"
+"xraySwitchClickDesk" = "請謹慎選擇，因為較舊版本可能與當前配置不相容 這裡列出的是官方版本，切換後將失去 S3X 內建版本對 sing-box、mihomo 用戶端的 REALITY 相容性。"
 "xrayStatusUnknown" = "未知"
 "xrayStatusRunning" = "運行中"
 "xrayStatusStop" = "停止"

@@ -110,7 +110,7 @@
 "accessLog" = "Access log"
 "accessLogDesc" = "Xray's access log (access.log) records every connection. Client IP limits need it; turning it off saves disk writes. Switching restarts Xray."
 "xraySwitchClick" = "Geçiş yapmak istediğiniz sürümü seçin."
-"xraySwitchClickDesk" = "Dikkatli seçin, eski sürümler mevcut yapılandırmalarla uyumlu olmayabilir."
+"xraySwitchClickDesk" = "Dikkatli seçin, eski sürümler mevcut yapılandırmalarla uyumlu olmayabilir. Burada listelenen resmî sürümler, S3X derlemesinin sing-box ve mihomo istemcileri için REALITY uyumluluğunu içermez."
 "xrayStatusUnknown" = "Bilinmiyor"
 "xrayStatusRunning" = "Çalışıyor"
 "xrayStatusStop" = "Durduruldu"

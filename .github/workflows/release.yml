@@ -15,6 +15,7 @@ on:
       - '**.go'
       - '**/go.mod'
       - '**/go.sum'
+      - '**.patch'
       - 'config/version'
       - 'x-ui.service'
       - '.github/workflows/release.yml'
@@ -75,22 +76,13 @@ jobs:
           mv sbcore-linux-${{ matrix.platform }} x-ui/bin/
           cd x-ui/bin
 
-          Xray_URL="https://github.com/XTLS/Xray-core/releases/download/v26.10.21/"
-          if [ "${{ matrix.platform }}" == "amd64" ]; then
-            Xray_ZIP=Xray-linux-64.zip
-          else
-            Xray_ZIP=Xray-linux-arm64-v8a.zip
-          fi
-          wget -q ${Xray_URL}${Xray_ZIP}
-          unzip ${Xray_ZIP}
-          rm -f ${Xray_ZIP} geoip.dat geosite.dat
+          sh ../../sidecar/xray/build.sh ${{ matrix.platform }} xray-linux-${{ matrix.platform }}
           wget -q https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -q https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
           wget -q -O geoip_IR.dat https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat
           wget -q -O geosite_IR.dat https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geosite.dat
           wget -q -O geoip_RU.dat https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -q -O geosite_RU.dat https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download/geosite.dat
-          mv xray xray-linux-${{ matrix.platform }}
           # mtg-multi serves MTProto inbounds
           MTG_VER=1.16.1
           MTG_PKG=mtg-multi-${MTG_VER}-linux-${{ matrix.platform }}
