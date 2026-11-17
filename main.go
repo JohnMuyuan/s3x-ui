@@ -1,3 +1,6 @@
+// Disable default Go MPTCP listeners on Linux (CVE-2026-98432).
+//
+//go:debug multipathtcp=0
 package main
 
 import (

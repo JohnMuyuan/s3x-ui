@@ -1,5 +1,11 @@
 // Command sbcore runs sing-box for the S3X-UI panel. It serves the protocols
 // Xray lacks and is driven by the panel over a token-guarded loopback HTTP API.
+//
+// Disable default Go MPTCP listeners (CVE-2026-98432), matching upstream
+// sing-box's build flags so MPTCP only turns on when tcp_multi_path is set.
+//
+//go:debug multipathtcp=0
+//go:debug tlssha1=1
 package main
 
 import (
