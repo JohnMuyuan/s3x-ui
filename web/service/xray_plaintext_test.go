@@ -14,7 +14,8 @@ func TestRedirectPlaintextOutbounds(t *testing.T) {
 		{"tag":"tls","protocol":"vless","settings":{"vnext":[{"address":"sg.example.com","port":443,"users":[{"id":"x"}]}]},"streamSettings":{"security":"tls"}},
 		{"tag":"reality","protocol":"vless","settings":{"address":"1.2.3.4","port":443,"id":"x"},"streamSettings":{"security":"reality"}},
 		{"tag":"vless-enc","protocol":"vless","settings":{"address":"1.2.3.4","port":80,"id":"x","encryption":"mlkem768x25519plus.native.0rtt.abc"}},
-		{"tag":"lan-ip","protocol":"vless","settings":{"address":"192.168.1.2","port":80,"id":"x"}},
+		{"tag":"lan-ip","protocol":"vless","settings":{"address":"192.168.1.2","port":80,"id":"x","encryption":"none"}},
+		{"tag":"cgnat-ip","protocol":"vless","settings":{"address":"100.64.0.1","port":80,"id":"x","encryption":"none"}},
 		{"tag":"lan-name","protocol":"vless","settings":{"address":"nas.lan","port":80,"id":"x"}},
 		{"tag":"dotless","protocol":"vless","settings":{"address":"backend","port":80,"id":"x"}},
 		{"tag":"trojan-plain","protocol":"trojan","settings":{"servers":[{"address":"tj.example.com","port":80,"password":"p"}]}},
@@ -22,22 +23,22 @@ func TestRedirectPlaintextOutbounds(t *testing.T) {
 		{"tag":"ss","protocol":"shadowsocks","settings":{"servers":[{"address":"1.2.3.4","port":8388}]}}
 	]`
 	out, tags := redirectPlaintextOutbounds([]byte(in))
-	if want := []any{"plain-vnext", "plain-flat", "trojan-plain"}; !reflect.DeepEqual(tags, want) {
+	if want := []any{"plain-vnext", "plain-flat", "cgnat-ip", "trojan-plain"}; !reflect.DeepEqual(tags, want) {
 		t.Fatalf("redirected %v, want %v", tags, want)
 	}
 	var got []map[string]any
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 15 {
-		t.Fatalf("got %d outbounds, want the 12 and 3 to dial with", len(got))
+	if len(got) != 17 {
+		t.Fatalf("got %d outbounds, want the 13 and 4 to dial with", len(got))
 	}
-	for i, want := range map[int]string{12: "sg.example.com:80", 13: "1.2.3.4:80", 14: "tj.example.com:80"} {
+	for i, want := range map[int]string{13: "sg.example.com:80", 14: "1.2.3.4:80", 15: "100.64.0.1:80", 16: "tj.example.com:80"} {
 		if redirect := got[i]["settings"].(map[string]any)["redirect"]; got[i]["protocol"] != "freedom" || redirect != want {
 			t.Errorf("outbound %d: %v", i, got[i])
 		}
 	}
-	for _, i := range []int{1, 2, 9} {
+	for _, i := range []int{1, 2, 7, 10} {
 		if server := outboundServer(got[i]); server["address"] != "127.0.0.1" {
 			t.Errorf("%v kept its public address", got[i]["tag"])
 		}
@@ -47,6 +48,9 @@ func TestRedirectPlaintextOutbounds(t *testing.T) {
 		if err := xrayAccepts(got[i]); err != nil {
 			t.Errorf("%v: %v", got[i]["tag"], err)
 		}
+	}
+	if err := xrayAccepts(got[6]); err != nil {
+		t.Errorf("lan-ip should be accepted directly by Xray: %v", err)
 	}
 
 	// nothing to redirect: the outbounds come back untouched

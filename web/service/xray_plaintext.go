@@ -163,20 +163,10 @@ func plaintextToPublic(ob map[string]any) bool {
 	return address != "" && !privateAddress(address)
 }
 
-// Xray's private ranges and domains (common/geodata/consts.go).
+// Xray's private address rules (infra/conf requiresTransportSecurity and
+// common/geodata/consts.go). Since v26.11.9, IP exemptions are RFC 1918 / 4193
+// private, loopback, and link-local unicast only (not CGNAT 100.64.0.0/10).
 var (
-	privatePrefixes = func() []netip.Prefix {
-		var prefixes []netip.Prefix
-		for _, p := range []string{
-			"0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16",
-			"172.16.0.0/12", "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "192.168.0.0/16",
-			"198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/3",
-			"::/127", "fc00::/7", "fe80::/10", "ff00::/8",
-		} {
-			prefixes = append(prefixes, netip.MustParsePrefix(p))
-		}
-		return prefixes
-	}()
 	privateDomains = []string{"lan", "localdomain", "example", "invalid", "localhost", "test", "local", "home.arpa", "internal"}
 	dotlessDomain  = regexp.MustCompile(`^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$`)
 )
@@ -184,12 +174,7 @@ var (
 func privateAddress(address string) bool {
 	if ip, err := netip.ParseAddr(strings.Trim(address, "[]")); err == nil {
 		ip = ip.Unmap()
-		for _, p := range privatePrefixes {
-			if p.Contains(ip) {
-				return true
-			}
-		}
-		return false
+		return ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast()
 	}
 	domain := strings.TrimSuffix(strings.ToLower(address), ".")
 	if dotlessDomain.MatchString(domain) {

@@ -4,7 +4,7 @@
 set -e
 ARCH="${1:?usage: build.sh <amd64|arm64> [output]}"
 OUT="${2:-xray-linux-$ARCH}"
-XRAY_VERSION=v26.10.21
+XRAY_VERSION=v26.11.9
 HERE="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$(dirname "$OUT")"
 OUT="$(cd "$(dirname "$OUT")" && pwd)/$(basename "$OUT")"
